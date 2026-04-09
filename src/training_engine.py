@@ -1,6 +1,6 @@
 import torch
 from tqdm import tqdm
-from torch.cuda.amp import GradScaler
+from torch.amp import GradScaler
 from pathlib import Path
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
@@ -47,7 +47,7 @@ def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, 
     if 'best_val_acc' not in history:
         history['best_val_acc'] = 0.0
     
-    scaler = GradScaler() 
+    scaler = GradScaler()
     best_val_acc = history['best_val_acc']
     device_type = str(device).split(':')[0]  # Extract 'cuda' or 'cpu'
     
@@ -102,7 +102,7 @@ def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, 
         if epoch_val_acc > best_val_acc:
             best_val_acc = epoch_val_acc
             history['best_val_acc'] = best_val_acc
-            best_model_path = checkpoint_dir / "best_solar_resnet50.pth"
+            best_model_path = checkpoint_dir / "best_solarfft_resnet50.pth"
             torch.save(model.state_dict(), str(best_model_path))
             print("New Best Model Saved!")
 

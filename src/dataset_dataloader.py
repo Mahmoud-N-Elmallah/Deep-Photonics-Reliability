@@ -32,7 +32,7 @@ class DatasetMaker(Dataset):
         return len(self.data)
     
     def __getitem__(self, idx):
-        img=Image.open(f'../data/{self.data['path'][idx]}').convert('L')
+        img=Image.open(f"../data/{self.data['path'][idx]}").convert('L')
         y=self.data['label'][idx]
         if self.transform:
             img=self.transform(img)

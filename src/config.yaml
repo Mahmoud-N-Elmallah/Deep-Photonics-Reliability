@@ -1,0 +1,11 @@
+data_path:
+  test: ../data/test_data.csv
+  train: ../data/train_data.csv
+  val: ../data/val_data.csv
+fft_params:
+  apply_bilateral: false
+  notch_depth: 0.95
+  notch_width: 5
+stats:
+  train_mean: 0.6273
+  train_std: 0.1824

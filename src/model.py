@@ -16,5 +16,5 @@ class PhotonicResNet50(nn.Module):
         self.model.fc = nn.Linear(self.model.fc.in_features, num_classes)
 
     def forward(self, x):
-        x=self.model(x)
+        x = self.model(x)
         return x

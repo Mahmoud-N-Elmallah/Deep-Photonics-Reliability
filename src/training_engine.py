@@ -2,8 +2,6 @@ import torch
 from tqdm import tqdm
 from torch.cuda.amp import autocast, GradScaler
 from pathlib import Path
-import torch
-from torch.cuda.amp import autocast, GradScaler
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 def evaluate(model, loader, loss_fn, device):
@@ -28,9 +26,26 @@ def evaluate(model, loader, loss_fn, device):
     
     return avg_loss, accuracy
 
-def train_model(model, train_loader, val_loader, optimizer, loss_fn,scheduler, epochs, device, history={}):
+def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, epochs, device, history=None):
+    if history is None:
+        history = {}
+    
+    # Initialize history keys if not present
+    if 'train_loss' not in history:
+        history['train_loss'] = []
+    if 'train_acc' not in history:
+        history['train_acc'] = []
+    if 'val_loss' not in history:
+        history['val_loss'] = []
+    if 'val_acc' not in history:
+        history['val_acc'] = []
+    if 'lr' not in history:
+        history['lr'] = []
+    if 'best_val_acc' not in history:
+        history['best_val_acc'] = 0.0
+    
     scaler = GradScaler() 
-    best_val_acc = 0.0
+    best_val_acc = history['best_val_acc']
     
     # Define Scheduler: 
     # Reduce LR by factor of 0.1 if Val Loss doesn't improve for 3 epochs.
@@ -42,7 +57,6 @@ def train_model(model, train_loader, val_loader, optimizer, loss_fn,scheduler, e
         correct_train = 0
         total_train = 0
         
-        from tqdm import tqdm
         loop = tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}")
         
         for X, y in loop:
@@ -83,6 +97,7 @@ def train_model(model, train_loader, val_loader, optimizer, loss_fn,scheduler, e
 
         if epoch_val_acc > best_val_acc:
             best_val_acc = epoch_val_acc
+            history['best_val_acc'] = best_val_acc
             torch.save(model.state_dict(), "best_solar_resnet50.pth")
             print("New Best Model Saved!")
 

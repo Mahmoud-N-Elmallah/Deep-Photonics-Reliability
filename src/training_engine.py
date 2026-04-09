@@ -8,27 +8,33 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 def evaluate(model, loader, loss_fn, device):
     model.eval()
-    val_loss = 0
+    val_loss = 0.0
     correct = 0
     total = 0
+    
     with torch.no_grad():
         for X, y in loader:
             X, y = X.to(device), y.to(device)
-            outputs = model(X)
-            loss = loss_fn(outputs, y)
+            with autocast():
+                outputs = model(X)
+                loss = loss_fn(outputs, y)
             val_loss += loss.item()
+
             _, preds = torch.max(outputs, 1)
             correct += (preds == y).sum().item()
             total += y.size(0)
-    return val_loss / len(loader), correct / total
+    avg_loss = val_loss / len(loader)
+    accuracy = correct / total
+    
+    return avg_loss, accuracy
 
-def train_model(model, train_loader, val_loader, optimizer, loss_fn, epochs, device, history):
+def train_model(model, train_loader, val_loader, optimizer, loss_fn,scheduler, epochs, device, history={}):
     scaler = GradScaler() 
     best_val_acc = 0.0
     
     # Define Scheduler: 
     # Reduce LR by factor of 0.1 if Val Loss doesn't improve for 3 epochs.
-    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, verbose=True)
+    
     
     for epoch in range(epochs):
         model.train()

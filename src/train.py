@@ -18,9 +18,8 @@ def main():
     optimizer = torch.optim.AdamW(model.parameters(), lr=config['model_hp']['lr'],
                                   weight_decay=config['model_hp']['weight_decay'])
     loss_fn = nn.CrossEntropyLoss()
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5)
-    
-    train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, config['epochs'], device)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, verbose=True)
+    train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler,config['model_hp']['epochs'], device)
 
 if __name__ == "__main__":
     main()

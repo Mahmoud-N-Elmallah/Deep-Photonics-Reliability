@@ -38,22 +38,3 @@ class DatasetMaker(Dataset):
             img=self.transform(img)
         return img , y
     
-temp_train_ds=DatasetMaker('../data/train_data.csv',transforms=transforms.Compose([FftTransform(),transforms.ToTensor()]))
-
-all=[temp_train_ds[i][0] for i in range(len(temp_train_ds))]
-a=torch.stack(all,dim=0)
-train_mean=a[:,0,:,:].mean()
-train_std=a[:,0,:,:].std()  ## add these stats to the config file for further use
-
-config_content = f"""
-TRAIN_MEAN = {round(train_mean.item(),3)}
-TRAIN_STD = {round(train_std.item(),3)}
-NOTCH_WIDTH = 5
-NOTCH_DEPTH = 0.95
-APPLY_BILATERAL = False
-"""
-
-with open('../src/config.py', 'w') as f:
-    f.write(config_content.strip())
-
-print("Config saved successfully.")

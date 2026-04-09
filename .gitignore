@@ -2,3 +2,8 @@
 data/images
 .venv/
 src/model_creation.py
+# Ignore all checkpoint files
+checkpoints/checkpoint_epoch_*.pth
+
+# Ignore best model files
+checkpoints/best_*.pth

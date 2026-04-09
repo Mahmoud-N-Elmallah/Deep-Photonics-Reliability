@@ -12,6 +12,13 @@ fft_params:
   apply_bilateral: false
   notch_depth: 0.95
   notch_width: 5
+model_hp:
+  epochs: 20
+  lr: 1.0e-05
+  lr2: 5.0e-05
+  weight_decay: 0.01
+  weight_decay2: 0.05
+  drop_out: 0.3
 stats:
   train_mean: 0.6273
   train_std: 0.1824
@@ -20,9 +27,3 @@ train_class_count:
   1: 236
   2: 85
   3: 572
-model_hp:
-  lr: 0.00005
-  weight_decay: 0.01
-  epochs: 20
-
-

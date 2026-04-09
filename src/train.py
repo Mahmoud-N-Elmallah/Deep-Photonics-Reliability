@@ -8,7 +8,7 @@ import pickle
 from pathlib import Path
 
 def main():
-    # Resolve paths relative to script location
+    # Resolve paths mess
     script_dir = Path(__file__).parent
     project_root = script_dir.parent
     
@@ -16,7 +16,7 @@ def main():
     config = load_config(str(config_path))
     device = setup_device()
     
-    # Inject computed weights into config
+    # add computed weights into config
     config['class_weight'] = compute_class_weights(config)
     
     # Create checkpoint directory if it doesn't exist
@@ -31,14 +31,36 @@ def main():
     else:
         history = {}
     
-    train_loader, val_loader, test_loader = build_loaders(config, project_root)
-    model = PhotonicResNet50().to(device)
+    # Check if resuming from checkpoint or starting fresh
+    resume_checkpoint_path = checkpoint_dir / 'latest_checkpoint.pkl'
+    start_epoch = 0
     
-    optimizer = torch.optim.AdamW(model.parameters(), lr=config['model_hp']['lr'],
-                                  weight_decay=config['model_hp']['weight_decay'])
+    train_loader, val_loader, test_loader = build_loaders(config, project_root)
+    model = PhotonicResNet50(dropout_prob=config['model_hp']['drop_out']).to(device)
+    
+    optimizer = torch.optim.AdamW(model.parameters(), lr=config['model_hp']['lr2'],
+                                  weight_decay=config['model_hp']['weight_decay2'])
     loss_fn = nn.CrossEntropyLoss()
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3)
-    history, model = train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, config['model_hp']['epochs'], device, history, checkpoint_dir)
+    
+    # Resume from checkpoint if it exists
+    if resume_checkpoint_path.exists():
+        print(f"Resuming from checkpoint: {resume_checkpoint_path}")
+        checkpoint = torch.load(resume_checkpoint_path)
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        start_epoch = checkpoint['epoch']
+        print(f"Resumed at epoch {start_epoch}")
+    else:
+        print("Starting fresh training...")
+    
+    total_epochs = config['model_hp']['epochs']
+    history, model = train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, total_epochs, device, history, checkpoint_dir, start_epoch)
+    
+    # Save history after training
+    with open(history_path, 'wb') as f:
+        pickle.dump(history, f)
+    print(f"Training history saved to {history_path}")
     
     # Save history after training
     with open(history_path, 'wb') as f:

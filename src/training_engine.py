@@ -9,7 +9,7 @@ def evaluate(model, loader, loss_fn, device):
     val_loss = 0.0
     correct = 0
     total = 0
-    device_type = str(device).split(':')[0]  # Extract 'cuda' or 'cpu'
+    device_type = str(device).split(':')[0]  # Extract 'cuda' since this is how the new methhod works instead of the old deprecated one
     
     with torch.no_grad():
         for X, y in loader:
@@ -27,7 +27,7 @@ def evaluate(model, loader, loss_fn, device):
     
     return avg_loss, accuracy
 
-def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, epochs, device, history=None, checkpoint_dir=None):
+def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, epochs, device, history=None, checkpoint_dir=None, start_epoch=0):
     if checkpoint_dir is None:
         checkpoint_dir = Path.cwd()
     if history is None:
@@ -55,7 +55,7 @@ def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, 
     # Reduce LR by factor of 0.1 if Val Loss doesn't improve for 3 epochs.
     
     
-    for epoch in range(epochs):
+    for epoch in range(start_epoch, epochs):
         model.train()
         running_loss = 0.0
         correct_train = 0
@@ -116,5 +116,8 @@ def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, 
             }
             checkpoint_path = checkpoint_dir / f"checkpoint_epoch_{epoch+1}.pth"
             torch.save(checkpoint, str(checkpoint_path))
+            # Also save as latest checkpoint for easy resume
+            latest_checkpoint_path = checkpoint_dir / "latest_checkpoint.pkl"
+            torch.save(checkpoint, latest_checkpoint_path)
         
     return history, model

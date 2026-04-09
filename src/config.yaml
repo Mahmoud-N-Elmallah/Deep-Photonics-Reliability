@@ -9,3 +9,8 @@ fft_params:
 stats:
   train_mean: 0.6273
   train_std: 0.1824
+train_class_count:
+  0: 1206
+  1: 236
+  2: 85
+  3: 572

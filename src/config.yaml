@@ -13,7 +13,7 @@ fft_params:
   notch_depth: 0.95
   notch_width: 5
 model_hp:
-  epochs: 20
+  epochs: 40
   lr: 1.0e-05
   lr2: 5.0e-05
   weight_decay: 0.01

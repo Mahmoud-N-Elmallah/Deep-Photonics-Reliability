@@ -43,6 +43,9 @@ def main():
     loss_fn = nn.CrossEntropyLoss()
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3)
     
+    # Get total epochs from config BEFORE checkpoint check
+    total_epochs = config['model_hp']['epochs']
+    
     # Resume from checkpoint if it exists
     if resume_checkpoint_path.exists():
         print(f"Resuming from checkpoint: {resume_checkpoint_path}")
@@ -51,16 +54,19 @@ def main():
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         start_epoch = checkpoint['epoch']
         print(f"Resumed at epoch {start_epoch}")
+        
+        # Check if training already completed
+        if start_epoch >= total_epochs:
+            print(f"\n⚠️  Training already completed {start_epoch} epochs (config specifies {total_epochs} total).")
+            print(f"To continue training, increase 'epochs' in config.yaml")
+            print(f"Current: epochs: {total_epochs}")
+            print(f"Suggestion: epochs: {total_epochs + 20}  # to train 20 more epochs")
+            print("\nNo new epochs will be trained. Exiting.")
+            return
     else:
         print("Starting fresh training...")
     
-    total_epochs = config['model_hp']['epochs']
     history, model = train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, total_epochs, device, history, checkpoint_dir, start_epoch)
-    
-    # Save history after training
-    with open(history_path, 'wb') as f:
-        pickle.dump(history, f)
-    print(f"Training history saved to {history_path}")
     
     # Save history after training
     with open(history_path, 'wb') as f:

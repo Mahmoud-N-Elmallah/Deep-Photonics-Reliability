@@ -7,3 +7,4 @@ checkpoints/checkpoint_epoch_*.pth
 
 # Ignore best model files
 checkpoints/best_*.pth
+checkpoints\latest_checkpoint.pkl

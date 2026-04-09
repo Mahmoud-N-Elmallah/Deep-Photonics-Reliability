@@ -1,2 +1,3 @@
 # my ignores
 data/images
+.venv/

@@ -1,6 +1,6 @@
 import torch
 from tqdm import tqdm
-from torch.cuda.amp import autocast, GradScaler
+from torch.cuda.amp import GradScaler
 from pathlib import Path
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
@@ -9,11 +9,12 @@ def evaluate(model, loader, loss_fn, device):
     val_loss = 0.0
     correct = 0
     total = 0
+    device_type = str(device).split(':')[0]  # Extract 'cuda' or 'cpu'
     
     with torch.no_grad():
         for X, y in loader:
             X, y = X.to(device), y.to(device)
-            with autocast():
+            with torch.amp.autocast(device_type=device_type):
                 outputs = model(X)
                 loss = loss_fn(outputs, y)
             val_loss += loss.item()
@@ -48,6 +49,7 @@ def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, 
     
     scaler = GradScaler() 
     best_val_acc = history['best_val_acc']
+    device_type = str(device).split(':')[0]  # Extract 'cuda' or 'cpu'
     
     # Define Scheduler: 
     # Reduce LR by factor of 0.1 if Val Loss doesn't improve for 3 epochs.
@@ -65,7 +67,7 @@ def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, 
             X, y = X.to(device), y.to(device)
             optimizer.zero_grad()
             
-            with autocast():
+            with torch.amp.autocast(device_type=device_type):
                 outputs = model(X)
                 loss = loss_fn(outputs, y)
             

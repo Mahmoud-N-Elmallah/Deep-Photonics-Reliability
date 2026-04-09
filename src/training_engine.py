@@ -1,0 +1,93 @@
+import torch
+from tqdm import tqdm
+from torch.cuda.amp import autocast, GradScaler
+from pathlib import Path
+import torch
+from torch.cuda.amp import autocast, GradScaler
+from torch.optim.lr_scheduler import ReduceLROnPlateau
+
+def evaluate(model, loader, loss_fn, device):
+    model.eval()
+    val_loss = 0
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for X, y in loader:
+            X, y = X.to(device), y.to(device)
+            outputs = model(X)
+            loss = loss_fn(outputs, y)
+            val_loss += loss.item()
+            _, preds = torch.max(outputs, 1)
+            correct += (preds == y).sum().item()
+            total += y.size(0)
+    return val_loss / len(loader), correct / total
+
+def train_model(model, train_loader, val_loader, optimizer, loss_fn, epochs, device, history):
+    scaler = GradScaler() 
+    best_val_acc = 0.0
+    
+    # Define Scheduler: 
+    # Reduce LR by factor of 0.1 if Val Loss doesn't improve for 3 epochs.
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, verbose=True)
+    
+    for epoch in range(epochs):
+        model.train()
+        running_loss = 0.0
+        correct_train = 0
+        total_train = 0
+        
+        from tqdm import tqdm
+        loop = tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}")
+        
+        for X, y in loop:
+            X, y = X.to(device), y.to(device)
+            optimizer.zero_grad()
+            
+            with autocast():
+                outputs = model(X)
+                loss = loss_fn(outputs, y)
+            
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+            
+            running_loss += loss.item()
+            _, preds = torch.max(outputs, 1)
+            correct_train += (preds == y).sum().item()
+            total_train += y.size(0)
+            
+            loop.set_postfix(loss=loss.item(), acc=correct_train/total_train)
+
+        # Evaluation
+        epoch_loss = running_loss / len(train_loader)
+        epoch_train_acc = correct_train / total_train
+        val_loss, epoch_val_acc = evaluate(model, val_loader, loss_fn, device)
+        
+
+        # monitor val_loss to decide when to drop the LR
+        scheduler.step(val_loss)
+        
+        history['train_loss'].append(epoch_loss)
+        history['train_acc'].append(epoch_train_acc)
+        history['val_loss'].append(val_loss)
+        history['val_acc'].append(epoch_val_acc)
+        history['lr'].append(optimizer.param_groups[0]['lr']) # Track LR changes
+        
+        print(f"\nSummary -> Loss: {epoch_loss:.4f} | Train Acc: {epoch_train_acc:.4f} | Val Acc: {epoch_val_acc:.4f} | LR: {optimizer.param_groups[0]['lr']}")
+
+        if epoch_val_acc > best_val_acc:
+            best_val_acc = epoch_val_acc
+            torch.save(model.state_dict(), "best_solar_resnet50.pth")
+            print("New Best Model Saved!")
+
+        if (epoch + 1) % 5 == 0:
+            checkpoint = {
+                'epoch': epoch + 1,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'history': history,
+                'best_acc': best_val_acc
+            }
+            torch.save(checkpoint, f"checkpoint_epoch_{epoch+1}.pth")
+        
+    return history, model

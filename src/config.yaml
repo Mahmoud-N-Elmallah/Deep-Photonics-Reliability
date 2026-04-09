@@ -20,3 +20,7 @@ train_class_count:
   1: 236
   2: 85
   3: 572
+model_hp:
+  lr: 1e-5
+  weight_decay: 1e-2
+

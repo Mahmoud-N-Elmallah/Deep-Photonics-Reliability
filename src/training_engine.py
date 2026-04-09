@@ -26,7 +26,9 @@ def evaluate(model, loader, loss_fn, device):
     
     return avg_loss, accuracy
 
-def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, epochs, device, history=None):
+def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, epochs, device, history=None, checkpoint_dir=None):
+    if checkpoint_dir is None:
+        checkpoint_dir = Path.cwd()
     if history is None:
         history = {}
     
@@ -98,7 +100,8 @@ def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, 
         if epoch_val_acc > best_val_acc:
             best_val_acc = epoch_val_acc
             history['best_val_acc'] = best_val_acc
-            torch.save(model.state_dict(), "best_solar_resnet50.pth")
+            best_model_path = checkpoint_dir / "best_solar_resnet50.pth"
+            torch.save(model.state_dict(), str(best_model_path))
             print("New Best Model Saved!")
 
         if (epoch + 1) % 5 == 0:
@@ -109,6 +112,7 @@ def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, 
                 'history': history,
                 'best_acc': best_val_acc
             }
-            torch.save(checkpoint, f"checkpoint_epoch_{epoch+1}.pth")
+            checkpoint_path = checkpoint_dir / f"checkpoint_epoch_{epoch+1}.pth"
+            torch.save(checkpoint, str(checkpoint_path))
         
     return history, model

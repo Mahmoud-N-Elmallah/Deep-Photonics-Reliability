@@ -2,10 +2,11 @@ import torch
 from torch.utils.data import DataLoader, WeightedRandomSampler
 from torchvision import transforms
 from typing import Dict
+from pathlib import Path
 from physics_utils import *
 from dataset_dataloader import *
 
-def build_loaders(config: Dict):
+def build_loaders(config: Dict, project_root: Path = None):
 
     # 1. Transforms
     train_transform = transforms.Compose([
@@ -33,9 +34,11 @@ def build_loaders(config: Dict):
                                    transforms.Normalize(mean=[config['stats']['train_mean']], std=[config['stats']['train_std']])])
 
     # 2. Datasets
-    train_ds = DatasetMaker(config['data_path']['train'], transforms=train_transform)
-    val_ds = DatasetMaker(config['data_path']['val'], transforms=val_transform) 
-    test_ds=DatasetMaker(config['data_path']['test'], transforms=val_transform) 
+    if project_root is None:
+        project_root = Path.cwd()
+    train_ds = DatasetMaker(config['data_path']['train'], transforms=train_transform, project_root=project_root)
+    val_ds = DatasetMaker(config['data_path']['val'], transforms=val_transform, project_root=project_root)
+    test_ds = DatasetMaker(config['data_path']['test'], transforms=val_transform, project_root=project_root) 
 
     # 3. Sampler (Weighted to handle imbalanced Solar Fault classes)
     sample_weights = [config['class_weight'][label] for label in train_ds.data['label']]

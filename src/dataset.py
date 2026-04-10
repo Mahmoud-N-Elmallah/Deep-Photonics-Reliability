@@ -1,6 +1,8 @@
 import torch 
 import torchvision
 from torchvision import transforms
+###
+from torchvision.transforms import v2
 from torch.utils.data import DataLoader,Dataset
 import pandas as pd 
 import cv2 

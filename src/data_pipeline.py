@@ -75,8 +75,8 @@ def build_loaders(config: Dict, project_root: Path = None, experiment_type: str 
     test_ds = DatasetMaker(config['data_path']['test'], transforms=val_transform, project_root=project_root, experiment_type=experiment_type)
 
     # 3 Loaders (class imbalance handled via loss function weights)
-    train_loader = DataLoader(train_ds, batch_size=config['batch_size'], shuffle=True)
-    val_loader = DataLoader(val_ds, batch_size=config['batch_size'])
-    test_loader = DataLoader(test_ds, batch_size=config['batch_size'])
+    train_loader = DataLoader(train_ds, batch_size=config['batch_size'], shuffle=True, num_workers=4, pin_memory=True, persistent_workers=True)
+    val_loader = DataLoader(val_ds, batch_size=config['batch_size'], num_workers=4, pin_memory=True, persistent_workers=True)
+    test_loader = DataLoader(test_ds, batch_size=config['batch_size'], num_workers=4, pin_memory=True, persistent_workers=True)
     
     return train_loader, val_loader, test_loader, input_channels

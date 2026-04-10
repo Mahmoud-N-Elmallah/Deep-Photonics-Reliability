@@ -89,7 +89,7 @@ def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, 
                                         weight_decay=config.get('model_hp', {}).get('weight_decay', 1e-4))
             
             # Switch to ReduceLROnPlateau for stage 2
-            scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10)
+            scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=10)
             
             history['training_stage'] = 'stage2'
             stage_transitioned = True
@@ -114,6 +114,8 @@ def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, 
                 loss = loss_fn(outputs, y)
             
             scaler.scale(loss).backward()
+            scaler.unscale_(optimizer)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             scaler.step(optimizer)
             scaler.update()
             

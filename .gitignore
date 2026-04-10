@@ -1,5 +1,6 @@
 # my ignores
 data/images
+data/pseudo_masks/
 .venv/
 
 # Ignore all checkpoint and model save files

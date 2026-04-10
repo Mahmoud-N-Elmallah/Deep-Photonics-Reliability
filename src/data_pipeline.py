@@ -36,7 +36,7 @@ def build_loaders(config: Dict, project_root: Path = None):
     val_transform = transforms.Compose([
         FftTransform(
         width=config['fft_params']['notch_width'], 
-        notch_depth=config['fft_params']['notch_depth'],
+        depth=config['fft_params']['notch_depth'],
         apply_bilateral=config['fft_params']['apply_bilateral'],
         dual_channel=config['fft_params']['dual_channel'] ),
         v2.Normalize(

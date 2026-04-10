@@ -16,8 +16,8 @@ fft_params:
 model_hp:
   drop_out: 0.25
   epochs: 30
-  lr: 5.0e-05
-  weight_decay: 0.03
+  lr: 3.0e-04
+  weight_decay: 1.0e-04
 stats:
   train_fft_mean: 0.6283
   train_fft_std: 0.1727

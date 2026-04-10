@@ -28,6 +28,7 @@ def build_loaders(config: Dict, project_root: Path = None):
         dual_channel=config['fft_params']['dual_channel'] 
     ),
     v2.ColorJitter(brightness=0.1, contrast=0.1),
+    v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)]),
     v2.Normalize(
         mean=[config['stats']['train_original_mean'], config['stats']['train_fft_mean']],
         std=[config['stats']['train_original_std'], config['stats']['train_fft_std']])])
@@ -39,6 +40,7 @@ def build_loaders(config: Dict, project_root: Path = None):
         depth=config['fft_params']['notch_depth'],
         apply_bilateral=config['fft_params']['apply_bilateral'],
         dual_channel=config['fft_params']['dual_channel'] ),
+        v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)]),
         v2.Normalize(
         mean=[config['stats']['train_original_mean'], config['stats']['train_fft_mean']],
         std=[config['stats']['train_original_std'], config['stats']['train_fft_std']])])

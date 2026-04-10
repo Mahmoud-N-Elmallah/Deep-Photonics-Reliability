@@ -38,8 +38,8 @@ def main():
     train_loader, val_loader, test_loader = build_loaders(config, project_root)
     model = PhotonicResNet50(dropout_prob=config['model_hp']['drop_out']).to(device)
     
-    optimizer = torch.optim.AdamW(model.parameters(), lr=config['model_hp']['lr2'],
-                                  weight_decay=config['model_hp']['weight_decay2'])
+    optimizer = torch.optim.AdamW(model.parameters(), lr=config['model_hp']['lr'],
+                                  weight_decay=config['model_hp']['weight_decay'])
     loss_fn = nn.CrossEntropyLoss()
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10)
     

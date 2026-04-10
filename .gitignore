@@ -1,7 +1,6 @@
 # my ignores
 data/images
 .venv/
-src/model_creation.py
 
 # Ignore all checkpoint and model save files
 checkpoints/

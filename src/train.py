@@ -16,8 +16,8 @@ def main():
     config = load_config(str(config_path))
     device = setup_device()
     
-    # add computed weights into config
-    config['class_weight'] = compute_class_weights(config)
+    # Compute class weights for loss function
+    class_weights = compute_class_weights(config, device=device)
     
     # Create checkpoint directory if it doesn't exist
     checkpoint_dir = project_root / 'checkpoints'
@@ -40,7 +40,7 @@ def main():
     
     optimizer = torch.optim.AdamW(model.parameters(), lr=config['model_hp']['lr'],
                                   weight_decay=config['model_hp']['weight_decay'])
-    loss_fn = nn.CrossEntropyLoss()
+    loss_fn = nn.CrossEntropyLoss(weight=class_weights)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10)
     
     # Get total epochs from config BEFORE checkpoint check

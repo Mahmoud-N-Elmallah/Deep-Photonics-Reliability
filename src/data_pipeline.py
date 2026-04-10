@@ -1,5 +1,5 @@
 import torch
-from torch.utils.data import DataLoader, WeightedRandomSampler
+from torch.utils.data import DataLoader
 from torchvision.transforms import v2
 from torchvision import transforms
 from typing import Dict
@@ -52,12 +52,8 @@ def build_loaders(config: Dict, project_root: Path = None):
     val_ds = DatasetMaker(config['data_path']['val'], transforms=val_transform, project_root=project_root)
     test_ds = DatasetMaker(config['data_path']['test'], transforms=val_transform, project_root=project_root) 
 
-    # 3 Sampler (Weighted to handle imbalancedd classes)
-    sample_weights = [config['class_weight'][label] for label in train_ds.data['label']]
-    sampler = WeightedRandomSampler(weights=sample_weights, num_samples=len(train_ds), replacement=True)
-
-    # 4 loaders
-    train_loader = DataLoader(train_ds, batch_size=config['batch_size'], sampler=sampler)
+    # 3 Loaders (class imbalance handled via loss function weights)
+    train_loader = DataLoader(train_ds, batch_size=config['batch_size'], shuffle=True)
     val_loader = DataLoader(val_ds, batch_size=config['batch_size'])
     test_loader=DataLoader(test_ds,batch_size=config['batch_size'])
     

@@ -19,7 +19,12 @@ def setup_device() -> torch.device:
     logger.info(f"Using device: {device}")
     return device
 
-def compute_class_weights(config: Dict) -> list:
+def compute_class_weights(config: Dict, device: torch.device = None) -> torch.Tensor:
+    """Compute class weights for CrossEntropyLoss (inverse frequency normalized)."""
+    if device is None:
+        device = torch.device('cpu')
     counts_dict = config['train_class_count']
     counts = torch.tensor([counts_dict[i] for i in range(len(counts_dict))], dtype=torch.float32)
-    return (1.0 / counts).tolist()
+    class_weights = 1.0 / counts
+    class_weights = class_weights / class_weights.sum() * len(class_weights)  # Normalize to sum to num_classes
+    return class_weights.to(device)

@@ -10,6 +10,12 @@ data_path:
   val: C:\Projects\PV Cells Fault CV\Deep-Photonics-Reliability\data\val_data.csv
 experiment:
   name: tri_channel
+  best_model_name: best_model.pth
+cam_params:
+  percentile_threshold: 75
+  morph_kernel_size: 3
+  output_dir: C:\Projects\PV Cells Fault CV\Deep-Photonics-Reliability\data\pseudo_masks
+  target_layer_index: -1
 fft_params:
   apply_bilateral: true
   clahe_clip_limit: 3.0

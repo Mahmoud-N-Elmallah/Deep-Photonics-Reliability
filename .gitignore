@@ -2,9 +2,30 @@
 data/images
 .venv/
 src/model_creation.py
-# Ignore all checkpoint files
-checkpoints/checkpoint_epoch_*.pth
 
-# Ignore best model files
-checkpoints/best_*.pth
-checkpoints\latest_checkpoint.pkl
+# Ignore all checkpoint and model save files
+checkpoints/
+*.pth
+*.pt
+*.pkl
+*.h5
+*.keras
+*.onnx
+*.pb
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore OS files
+.DS_Store
+Thumbs.db

@@ -1,3 +1,7 @@
+# Experiment configuration - Options: "dual_channel", "original_only", "fft_only"
+experiment:
+  name: "dual_channel"
+
 batch_size: 32
 class_weight:
 - 0.0008291873964481056

@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch
 from torch.optim.lr_scheduler import CosineAnnealingLR
 import pickle
+import shutil
 from pathlib import Path
 
 def main():
@@ -17,12 +18,32 @@ def main():
     config = load_config(str(config_path))
     device = setup_device()
     
+    # Get experiment type from config
+    experiment_type = config.get('experiment', {}).get('name', 'dual_channel')
+    print(f"\nExperiment: {experiment_type}")
+    
     # Compute class weights for loss function
     class_weights = compute_class_weights(config, device=device)
     
-    # Create checkpoint directory if it doesn't exist
-    checkpoint_dir = project_root / 'checkpoints'
-    checkpoint_dir.mkdir(exist_ok=True)
+    # Create experiment-specific checkpoint directory
+    checkpoint_dir = project_root / 'checkpoints' / experiment_type
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    print(f"Checkpoint directory: {checkpoint_dir}\n")
+    
+    # Handle backward compatibility: migrate old checkpoints
+    old_checkpoint_dir = project_root / 'checkpoints'
+    old_latest = old_checkpoint_dir / 'latest_checkpoint.pkl'
+    old_history = old_checkpoint_dir / 'training_history.pkl'
+    
+    if experiment_type == 'dual_channel' and old_latest.exists() and not (checkpoint_dir / 'latest_checkpoint.pkl').exists():
+        print("Migrating old checkpoints to experiment-specific directory...")
+        if old_latest.exists():
+            shutil.copy(old_latest, checkpoint_dir / 'latest_checkpoint.pkl')
+            print(f"  Migrated latest_checkpoint.pkl")
+        if old_history.exists():
+            shutil.copy(old_history, checkpoint_dir / 'training_history.pkl')
+            print(f"  Migrated training_history.pkl")
+        print()
     
     # Load existing history if it exists
     history_path = checkpoint_dir / 'training_history.pkl'
@@ -36,8 +57,8 @@ def main():
     resume_checkpoint_path = checkpoint_dir / 'latest_checkpoint.pkl'
     start_epoch = 0
     
-    train_loader, val_loader, test_loader = build_loaders(config, project_root)
-    model = PhotonicResNet50(dropout_prob=config['model_hp']['drop_out']).to(device)
+    train_loader, val_loader, test_loader, input_channels = build_loaders(config, project_root, experiment_type)
+    model = PhotonicResNet50(input_channels=input_channels, dropout_prob=config['model_hp']['drop_out']).to(device)
     
     # STAGE 1 SETUP: Freeze backbone, train head only
     staged_config = config.get('staged_finetuning', {})

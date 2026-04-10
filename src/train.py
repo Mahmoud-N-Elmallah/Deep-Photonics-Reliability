@@ -61,23 +61,10 @@ def main():
     num_classes = len(config.get('train_class_count', {0: 1, 1: 1, 2: 1, 3: 1}))
     model = PhotonicResNet18(input_channels=input_channels, num_classes=num_classes, dropout_prob=config['model_hp']['drop_out']).to(device)
     
-    # STAGE 1 SETUP: Freeze backbone, train head only
-    staged_config = config.get('staged_finetuning', {})
-    use_staged = staged_config.get('enabled', True)
-    
-    if use_staged:
-        stage1_epochs = staged_config.get('stage1_epochs', 20)
-        stage1_lr = staged_config.get('stage1_lr', 1e-3)
-        stage2_lr = staged_config.get('stage2_lr', 1e-4)
-        print(f"\n=== TWO-STAGE FINE-TUNING ===")
-        print(f"Stage 1: Train head only for {stage1_epochs} epochs at LR={stage1_lr}")
-        print(f"Stage 2: Fine-tune layer4+head for {config['model_hp']['epochs']-stage1_epochs} epochs at LR={stage2_lr}\n")
-    else:
-        unfreeze_head(model)
-        stage1_epochs = 0
-        stage1_lr = config['model_hp']['lr']
-        stage2_lr = config['model_hp']['lr']
-    
+    # Always ensure model is fully unfrozen
+    for param in model.parameters():
+        param.requires_grad = True
+        
     # Resume from checkpoint if it exists
     if resume_checkpoint_path.exists():
         print(f"Resuming from checkpoint: {resume_checkpoint_path}")
@@ -86,21 +73,8 @@ def main():
         start_epoch = checkpoint['epoch']
         print(f"Resumed at epoch {start_epoch}")
         
-        # Detect which stage to resume in
-        if use_staged and start_epoch >= stage1_epochs:
-            print(f"Resuming in STAGE 2 (layer4 + head fine-tuning)")
-            # Already unfrozen by checkpoint state
-            unfreeze_all(model)
-            unfreeze_head(model)
-            optimizer = torch.optim.AdamW(model.parameters(), lr=stage2_lr,
-                                        weight_decay=config['model_hp']['weight_decay'])
-        else:
-            print(f"Resuming in STAGE 1 (head-only training)")
-            freeze_backbone(model)
-            unfreeze_head(model)
-            optimizer = torch.optim.AdamW(model.parameters(), lr=stage1_lr,
-                                        weight_decay=config['model_hp']['weight_decay'])
-        
+        optimizer = torch.optim.AdamW(model.parameters(), lr=config['model_hp']['lr'],
+                                    weight_decay=config['model_hp']['weight_decay'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         
         # Check if training already completed
@@ -112,24 +86,22 @@ def main():
             print("\nNo new epochs will be trained. Exiting.")
             return
     else:
-        print("Starting fresh training...")
-        if use_staged:
-            freeze_backbone(model)
-            unfreeze_head(model)
-        else:
-            unfreeze_head(model)
-        
-        optimizer = torch.optim.AdamW(model.parameters(), lr=stage1_lr,
+        print("Starting fresh training (fully unfrozen)...")
+        optimizer = torch.optim.AdamW(model.parameters(), lr=config['model_hp']['lr'],
                                     weight_decay=config['model_hp']['weight_decay'])
     
     label_smoothing = config.get('model_hp', {}).get('label_smoothing', 0.0)
     loss_fn = nn.CrossEntropyLoss(weight=class_weights, label_smoothing=label_smoothing)
-    scheduler = CosineAnnealingLR(optimizer, T_max=stage1_epochs) if use_staged else torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=10)
+    
+    # Use ReduceLROnPlateau for the entire training
+    scheduler_factor = config.get('model_hp', {}).get('scheduler_factor', 0.5)
+    scheduler_patience = config.get('model_hp', {}).get('scheduler_patience', 10)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=scheduler_factor, patience=scheduler_patience)
     
     # Get total epochs from config
     total_epochs = config['model_hp']['epochs']
     
-    history, model = train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, total_epochs, device, history, checkpoint_dir, start_epoch, config, stage1_epochs if use_staged else None, stage2_lr if use_staged else None)
+    history, model = train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, total_epochs, device, history, checkpoint_dir, start_epoch, config)
     
     # Save history after training
     with open(history_path, 'wb') as f:

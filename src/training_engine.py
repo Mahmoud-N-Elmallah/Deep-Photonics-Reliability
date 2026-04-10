@@ -35,7 +35,7 @@ def evaluate(model, loader, loss_fn, device):
     
     return avg_loss, weighted_f1, accuracy
 
-def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, epochs, device, history=None, checkpoint_dir=None, start_epoch=0, config=None, stage1_epochs=None, stage2_lr=None):
+def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, epochs, device, history=None, checkpoint_dir=None, start_epoch=0, config=None):
     if checkpoint_dir is None:
         checkpoint_dir = Path.cwd()
     if history is None:
@@ -58,8 +58,6 @@ def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, 
         history['lr'] = []
     if 'best_val_f1' not in history:
         history['best_val_f1'] = 0.0
-    if 'training_stage' not in history:
-        history['training_stage'] = 'stage1' if stage1_epochs else 'full'
     if 'best_val_loss' not in history:
         history['best_val_loss'] = float('inf')
     if 'patience_counter' not in history:
@@ -69,40 +67,7 @@ def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, 
     best_val_f1 = history['best_val_f1']
     device_type = str(device).split(':')[0]  # Extract 'cuda' or 'cpu'
     
-    # Check using staged training
-    use_staged = stage1_epochs is not None and stage2_lr is not None
-    
-    # Detect if stage transition already happened (on resume)
-    stage_transitioned = False
-    if use_staged and start_epoch >= stage1_epochs:
-        stage_transitioned = True
-        print(f"Stage transition already completed. Resuming in Stage 2.\n")
-    
     for epoch in range(start_epoch, epochs):
-        # === STAGE TRANSITION: Move to stage 2 after stage1_epochs ===
-        if use_staged and not stage_transitioned and epoch >= stage1_epochs:
-            print(f"\n{'='*60}")
-            print(f"TRANSITIONING TO STAGE 2: Fine-tuning layer4 + head")
-            print(f"{'='*60}\n")
-            
-            # Unfreeze the entire model
-            unfreeze_all(model)
-            
-            # Create new optimizer with stage2 LR
-            optimizer = torch.optim.AdamW(model.parameters(), lr=stage2_lr,
-                                        weight_decay=config.get('model_hp', {}).get('weight_decay', 1e-4))
-            
-            # Switch to ReduceLROnPlateau for stage 2
-            scheduler_factor = config.get('model_hp', {}).get('scheduler_factor', 0.5)
-            scheduler_patience = config.get('model_hp', {}).get('scheduler_patience', 10)
-            scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=scheduler_factor, patience=scheduler_patience)
-            
-            history['training_stage'] = 'stage2'
-            history['patience_counter'] = 0
-            history['best_val_loss'] = float('inf') # Reset to let stage 2 find its own best loss
-            stage_transitioned = True
-            print(f"Stage 2 LR: {stage2_lr}, Epochs remaining: {epochs - epoch}\n")
-        
         model.train()
         running_loss = 0.0
         train_preds = []
@@ -110,8 +75,7 @@ def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, 
         train_correct = 0
         train_total = 0
         
-        stage_label = "Stage 1" if (not stage_transitioned and use_staged) else ("Stage 2" if (stage_transitioned and use_staged) else "")
-        loop = tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs} {stage_label}")
+        loop = tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}")
         
         for X, y in loop:
             X, y = X.to(device), y.to(device)

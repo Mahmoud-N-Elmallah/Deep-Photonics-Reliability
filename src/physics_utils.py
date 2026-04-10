@@ -41,3 +41,37 @@ def reconstruct_image(filtered_dft, apply_bilateral=True):
         recon_rescaled = cv2.bilateralFilter(recon_rescaled, d=7, sigmaColor=50, sigmaSpace=50)
         
     return recon_rescaled
+
+
+
+
+#new enhanced filter
+
+def adaptive_notch_filter(dft_shift, width=0.05, depth=0.99):
+    
+    mag = np.abs(dft_shift)
+    r, c = mag.shape
+    cr, cc = r // 2, c // 2
+    y, x = np.indices((r, c))
+    x = x - cc
+    y = y - cr
+    radius = np.sqrt(x**2 + y**2)
+    theta = np.arctan2(y, x)
+    mag = mag * (radius > 10)
+    # histogram over angles
+    num_bins = 180
+    hist, bins = np.histogram(theta, bins=num_bins, weights=mag)
+    # smooth histogram
+    hist = np.convolve(hist, np.ones(5)/5, mode='same')
+    # find top 2 peaks
+    peak_idxs = np.argsort(hist)[-2:]
+    dominant_angles = bins[peak_idxs]
+    # build mask
+    mask = np.ones((r, c))
+    for angle in dominant_angles:
+        angle_diff = np.angle(np.exp(1j * (theta - angle)))
+        gauss = np.exp(-(angle_diff**2) / (2 * width**2))
+        mask *= (1 - depth * gauss)
+    mask[cr-6:cr+6, cc-6:cc+6] = 1
+
+    return dft_shift * mask, mask

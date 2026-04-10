@@ -25,13 +25,13 @@ def build_loaders(config: Dict, project_root: Path = None):
     ]),
     transforms.ToTensor(),
     transforms.Normalize(
-        mean=[config['stats']['train_mean']], 
-        std=[config['stats']['train_std']])])
+        mean=[config['stats']['train_fft_mean']], 
+        std=[config['stats']['train_fft_std']])])
    
     val_transform =transforms.Compose([FftTransform(width=config['fft_params']['notch_width'], notch_depth=config['fft_params']['notch_depth'],
                                                     apply_bilateral=config['fft_params']['apply_bilateral']),
                                    transforms.ToTensor(),
-                                   transforms.Normalize(mean=[config['stats']['train_mean']], std=[config['stats']['train_std']])])
+                                   transforms.Normalize(mean=[config['stats']['train_fft_mean']], std=[config['stats']['train_fft_std']])])
 
     # 2. Datasets
     if project_root is None:

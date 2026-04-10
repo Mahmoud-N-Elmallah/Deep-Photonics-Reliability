@@ -41,7 +41,7 @@ def main():
     optimizer = torch.optim.AdamW(model.parameters(), lr=config['model_hp']['lr2'],
                                   weight_decay=config['model_hp']['weight_decay2'])
     loss_fn = nn.CrossEntropyLoss()
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10)
     
     # Get total epochs from config BEFORE checkpoint check
     total_epochs = config['model_hp']['epochs']
@@ -57,7 +57,7 @@ def main():
         
         # Check if training already completed
         if start_epoch >= total_epochs:
-            print(f"\n⚠️  Training already completed {start_epoch} epochs (config specifies {total_epochs} total).")
+            print(f"\n  Training already completed {start_epoch} epochs (config specifies {total_epochs} total).")
             print(f"To continue training, increase 'epochs' in config.yaml")
             print(f"Current: epochs: {total_epochs}")
             print(f"Suggestion: epochs: {total_epochs + 20}  # to train 20 more epochs")

@@ -97,7 +97,7 @@ def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, 
         history['val_acc'].append(epoch_val_acc)
         history['lr'].append(optimizer.param_groups[0]['lr']) # Track LR changes
         
-        print(f"\nSummary -> Loss: {epoch_loss:.4f} | Train Acc: {epoch_train_acc:.4f} | Val Acc: {epoch_val_acc:.4f} | LR: {optimizer.param_groups[0]['lr']}")
+        print(f"\nSummary -> Loss: {epoch_loss:.4f} | Train Acc: {epoch_train_acc:.4f} | Val Acc: {epoch_val_acc:.4f} | Val loss: {val_loss:.4f}| LR: {optimizer.param_groups[0]['lr']}")
 
         if epoch_val_acc > best_val_acc:
             best_val_acc = epoch_val_acc

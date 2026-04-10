@@ -10,15 +10,15 @@ from physics_utils import *
 from PIL import Image
 
 class FftTransform(object):
-    def __init__(self, width=5, notch_depth=0.95,apply_bilateral=False):
+    def __init__(self, width=0.05,depth=0.99,apply_bilateral=False):
         self.width=width
-        self.notch_depth=notch_depth
+        self.notch_depth=depth
         self.apply_bilateral=apply_bilateral
     
     def __call__(self,img):
         img = np.array(img)
         dft_shift,spectrum = compute_fft_spectrum(img)
-        filtered_dft, mask = apply_gaussian_notch_filter(dft_shift,width=self.width,notch_depth=self.notch_depth)
+        filtered_dft, mask = adaptive_notch_filter(dft_shift,width=self.width, depth=self.notch_depth)
         cleaned_img = reconstruct_image(filtered_dft,apply_bilateral=self.apply_bilateral)
         return Image.fromarray(cleaned_img)
  

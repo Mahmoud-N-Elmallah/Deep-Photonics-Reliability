@@ -30,10 +30,16 @@ def compute_class_weights(config: Dict, device: torch.device = None) -> torch.Te
     return class_weights.to(device)
 
 def freeze_backbone(model) -> None:
-    """Freeze all backbone layers for stage 1 training (head only)."""
-    for param in model.model.parameters():
+    """Freeze backbone layers except conv1 and bn1 (re-initialized for custom input channels)."""
+    for name, param in model.model.named_parameters():
+        # Keep the top-level conv1/bn1 trainable since they were re-initialized
+        # Note: layer1.0.conv1 etc. are NOT matched here (they contain a dot before conv1)
+        if name.startswith('conv1.') or name.startswith('bn1.'):
+            continue
+        if name.startswith('fc.'):
+            continue  # fc is handled separately by unfreeze_head
         param.requires_grad = False
-    logger.info("Backbone frozen. Only training head parameters.")
+    logger.info("Backbone frozen (conv1 and bn1 remain trainable for custom input channels).")
 
 def unfreeze_layer4(model) -> None:
     """Unfreeze layer4 for stage 2 fine-tuning."""

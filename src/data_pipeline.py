@@ -12,21 +12,28 @@ def build_loaders(config: Dict, project_root: Path = None, experiment_type: str 
     if experiment_type is None:
         experiment_type = config.get('experiment', {}).get('name', 'dual_channel')
     
-    # Map experiment type to FFT mode and input channels
+    # Map experiment type to FFT mode, input channels, and normalization stats
     if experiment_type == "dual_channel":
         fft_mode = "dual"
         input_channels = 2
+        norm_mean = [config['stats']['train_original_mean'], config['stats']['train_fft_mean']]
+        norm_std = [config['stats']['train_original_std'], config['stats']['train_fft_std']]
     elif experiment_type == "original_only":
         fft_mode = "original_only"
         input_channels = 1
+        norm_mean = [config['stats']['train_original_mean']]
+        norm_std = [config['stats']['train_original_std']]
     elif experiment_type == "fft_only":
         fft_mode = "fft_only"
         input_channels = 1
+        norm_mean = [config['stats']['train_fft_mean']]
+        norm_std = [config['stats']['train_fft_std']]
     else:
         raise ValueError(f"Unknown experiment type: {experiment_type}")
     
     # 1 Transforms
     train_transform = transforms.Compose([
+        v2.Resize((224, 224)),
         v2.RandomHorizontalFlip(p=0.5),
         v2.RandomVerticalFlip(p=0.5),
         v2.RandomChoice([
@@ -36,20 +43,20 @@ def build_loaders(config: Dict, project_root: Path = None, experiment_type: str 
             v2.RandomRotation((270, 270))
         ]),
         v2.ElasticTransform(alpha=20.0, sigma=2.5), 
+        v2.ColorJitter(brightness=0.15, contrast=0.15),
         FftTransform(
             width=config['fft_params']['notch_width'], 
             depth=config['fft_params']['notch_depth'],
             apply_bilateral=config['fft_params']['apply_bilateral'],
             mode=fft_mode
         ),
-        v2.ColorJitter(brightness=0.1, contrast=0.1),
         v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)]),
-        v2.Lambda(lambda x: x + torch.randn_like(x) * 0.01),
         v2.Normalize(
-            mean=[config['stats']['train_original_mean'], config['stats']['train_fft_mean']],
-            std=[config['stats']['train_original_std'], config['stats']['train_fft_std']])])
+            mean=norm_mean,
+            std=norm_std)])
     
     val_transform = transforms.Compose([
+        v2.Resize((224, 224)),
         FftTransform(
             width=config['fft_params']['notch_width'], 
             depth=config['fft_params']['notch_depth'],
@@ -57,8 +64,8 @@ def build_loaders(config: Dict, project_root: Path = None, experiment_type: str 
             mode=fft_mode),
         v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)]),
         v2.Normalize(
-            mean=[config['stats']['train_original_mean'], config['stats']['train_fft_mean']],
-            std=[config['stats']['train_original_std'], config['stats']['train_fft_std']])])
+            mean=norm_mean,
+            std=norm_std)])
 
     # 2 Datasets
     if project_root is None:
@@ -73,5 +80,3 @@ def build_loaders(config: Dict, project_root: Path = None, experiment_type: str 
     test_loader = DataLoader(test_ds, batch_size=config['batch_size'])
     
     return train_loader, val_loader, test_loader, input_channels
-    
-    return train_loader, val_loader,test_loader

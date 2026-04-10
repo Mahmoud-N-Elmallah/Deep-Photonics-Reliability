@@ -171,11 +171,8 @@ def main():
         os.makedirs(vis_dir / split_name, exist_ok=True)
         os.makedirs(mask_dir / split_name, exist_ok=True)
         
-        # Iterating over the dataloader. 
-        # Note: We need a way to track the original image names if we want pseudo_masks.csv
-        # Our DatasetMaker doesn't output paths currently, so let's use idx mapping.
+        # Sequentially process images to map masks back to original file names
         for idx in tqdm(range(len(loader.dataset))):
-            # Hacky but safe approach to get item and original path
             img_tensor, label = loader.dataset[idx] 
             img_path = loader.dataset.data['path'][idx]
             base_name = Path(img_path).stem
@@ -183,27 +180,26 @@ def main():
             # Formulate [1, C, H, W] tensor for model
             input_tensor = img_tensor.unsqueeze(0).to(device)
             
-            # Compute CAM for predicted class
+            # Compute Grad-CAM for predicted class
             cam, pred_class, logits = cam_extractor(input_tensor, target_class=None)
             
-            # If the user wants to filter out < 0.6 confidence samples, we do it via softmax
+            # Calculate confidence score
             probs = F.softmax(logits.unsqueeze(0), dim=1)
             confidence = probs[0, pred_class].item()
             
-            # Generate Pseudo Mask
+            # Generate Pseudo Mask based on Grad-CAM activations
             mask = create_pseudo_mask(cam, percentile=percentile_threshold, kernel_size=morph_kernel_size)
             
-            # Save raw mask
+            # Save raw mask for downstream physics-constrained training/analysis
             cv2.imwrite(str(mask_dir / split_name / f"{base_name}_mask.png"), mask)
             
-            # Only save visuals if Confidence > 0.4 (Optional logic)
-            # Pull image arrays back for visualization mapping
+            # Generate visualization for qualitative analysis
             img_tensor_cpu = img_tensor.clone().cpu()
-            denormed_img = denormalize(img_tensor_cpu, norm_mean, norm_std).numpy()
+            denormed_img = denormalize(img_tensor_cpu, norm_mean[:input_channels], norm_std[:input_channels]).numpy()
             
             raw_channel = denormed_img[0]
-            fft_channel = denormed_img[1]
-            enh_channel = denormed_img[2] if input_channels == 3 else denormed_img[1]
+            fft_channel = denormed_img[1] if input_channels > 1 else raw_channel
+            enh_channel = denormed_img[2] if input_channels == 3 else fft_channel
             
             plot_and_save_visuals(
                 raw_channel, fft_channel, enh_channel, cam, mask, 
@@ -211,14 +207,8 @@ def main():
                 pred_class, 
                 f"Conf: {confidence:.2f}"
             )
-            
-            # Limit loop for safe testing (remove this break when running fully)
-            if idx > 2:
-                break
-                
-        break # Only process train split for this initial test execution
 
-    print("Phase 3 & 4 Grad-CAM generation executed successfully See data/pseudo_masks/visuals.")
+    print("Grad-CAM generation and Pseudo-mask creation complete. Results saved to data/pseudo_masks.")
 
 if __name__ == '__main__':
     main()

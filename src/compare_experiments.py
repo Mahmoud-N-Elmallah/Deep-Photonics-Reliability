@@ -13,34 +13,39 @@ def load_history(checkpoint_dir):
         return pickle.load(f)
 
 def plot_comparison():
-    """Create comparison plots for all three experiments."""
+    """Create comparison plots for all experiments found in the checkpoints directory."""
     checkpoint_root = Path('checkpoints')
     
-    experiments = ['dual_channel', 'original_only', 'fft_only']
+    # Dynamically find all experiment directories that contain a history file
+    experiments = [d.name for d in checkpoint_root.iterdir() if d.is_dir() and (d / 'training_history.pkl').exists()]
     histories = {}
     
-    print("Loading experiment histories...")
+    print(f"Found {len(experiments)} experiments: {', '.join(experiments)}")
     for exp in experiments:
         hist = load_history(checkpoint_root / exp)
         if hist is not None:
             histories[exp] = hist
-            print(f"  ✓ Loaded {exp}")
-        else:
-            print(f"  ✗ Failed to load {exp}")
     
     if not histories:
-        print("No experiments found. Please run training for at least one experiment.")
+        print("No training histories found in checkpoints directory.")
         return
     
     # Create comparison plots
     fig, axes = plt.subplots(2, 2, figsize=(15, 12))
-    fig.suptitle('Experiment Comparison: Dual Channel vs Original Only vs FFT Only', fontsize=16, fontweight='bold')
+    fig.suptitle('Deep Photonics Reliability: Experiment Comparison', fontsize=16, fontweight='bold')
     
-    colors = {'dual_channel': '#1f77b4', 'original_only': '#ff7f0e', 'fft_only': '#2ca02c'}
+    # Define a color map for known experiments, fall back to default for others
+    color_map = {
+        'tri_channel': '#d62728', # Red
+        'dual_channel': '#1f77b4', # Blue
+        'original_only': '#ff7f0e', # Orange
+        'fft_only': '#2ca02c' # Green
+    }
     
     # Plot 1: Validation F1 Score
     for exp in histories:
-        axes[0, 0].plot(histories[exp]['val_f1'], label=exp, marker='o', markersize=3, linewidth=2, color=colors[exp])
+        c = color_map.get(exp, None)
+        axes[0, 0].plot(histories[exp]['val_f1'], label=exp, marker='o', markersize=3, linewidth=2, color=c)
     axes[0, 0].set_title('Validation F1 Score (Primary Metric)', fontsize=12, fontweight='bold')
     axes[0, 0].set_xlabel('Epoch')
     axes[0, 0].set_ylabel('F1 Score')
@@ -49,7 +54,8 @@ def plot_comparison():
     
     # Plot 2: Validation Accuracy
     for exp in histories:
-        axes[0, 1].plot(histories[exp]['val_acc'], label=exp, marker='o', markersize=3, linewidth=2, color=colors[exp])
+        c = color_map.get(exp, None)
+        axes[0, 1].plot(histories[exp]['val_acc'], label=exp, marker='o', markersize=3, linewidth=2, color=c)
     axes[0, 1].set_title('Validation Accuracy', fontsize=12, fontweight='bold')
     axes[0, 1].set_xlabel('Epoch')
     axes[0, 1].set_ylabel('Accuracy')
@@ -58,7 +64,8 @@ def plot_comparison():
     
     # Plot 3: Training F1 Score
     for exp in histories:
-        axes[1, 0].plot(histories[exp]['train_f1'], label=exp, marker='o', markersize=3, linewidth=2, color=colors[exp])
+        c = color_map.get(exp, None)
+        axes[1, 0].plot(histories[exp]['train_f1'], label=exp, marker='o', markersize=3, linewidth=2, color=c)
     axes[1, 0].set_title('Training F1 Score', fontsize=12, fontweight='bold')
     axes[1, 0].set_xlabel('Epoch')
     axes[1, 0].set_ylabel('F1 Score')
@@ -67,7 +74,8 @@ def plot_comparison():
     
     # Plot 4: Validation Loss
     for exp in histories:
-        axes[1, 1].plot(histories[exp]['val_loss'], label=exp, marker='o', markersize=3, linewidth=2, color=colors[exp])
+        c = color_map.get(exp, None)
+        axes[1, 1].plot(histories[exp]['val_loss'], label=exp, marker='o', markersize=3, linewidth=2, color=c)
     axes[1, 1].set_title('Validation Loss', fontsize=12, fontweight='bold')
     axes[1, 1].set_xlabel('Epoch')
     axes[1, 1].set_ylabel('Loss')

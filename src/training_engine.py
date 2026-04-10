@@ -4,7 +4,7 @@ from torch.amp import GradScaler
 from pathlib import Path
 from torch.optim.lr_scheduler import ReduceLROnPlateau, CosineAnnealingLR
 from sklearn.metrics import f1_score
-from utils import unfreeze_layer4
+from utils import *
 
 def evaluate(model, loader, loss_fn, device):
     model.eval()

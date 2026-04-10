@@ -1,4 +1,4 @@
-batch_size: 32
+batch_size: 64
 class_weight:
   - 0.0008291873964481056
   - 0.0042372881434857845
@@ -24,7 +24,7 @@ fft_params:
   notch_depth: 0.99
   notch_width: 0.9
 model_hp:
-  drop_out: 0.3
+  drop_out: 0.5
   epochs: 120
   lr: 0.0003
   weight_decay: 0.0001

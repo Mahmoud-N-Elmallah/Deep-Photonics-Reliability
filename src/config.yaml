@@ -19,7 +19,6 @@ cam_params:
 fft_params:
   apply_bilateral: true
   clahe_clip_limit: 3.0
-  dual_channel: true
   enhancement_method: clahe
   notch_depth: 0.99
   notch_width: 0.9
@@ -37,7 +36,7 @@ dataloader:
   persistent_workers: true
 augmentations:
   resize: 224
-  elastic_alpha: 20.0
+  elastic_alpha: 10.0
   elastic_sigma: 2.5
   color_jitter_brightness: 0.15
   color_jitter_contrast: 0.15
@@ -45,9 +44,9 @@ augmentations:
   vertical_flip_prob: 0.5
 staged_finetuning:
   enabled: true
-  stage1_epochs: 25
+  stage1_epochs: 10
   stage1_lr: 0.001
-  stage2_lr: 0.0003
+  stage2_lr: 0.0005
 stats:
   train_enhanced_mean: 0.5871
   train_enhanced_std: 0.2194

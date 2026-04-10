@@ -28,6 +28,31 @@ def build_loaders(config: Dict, project_root: Path = None):
     transforms.Normalize(mean=[config['stats']['train_original_mean'],config['stats']['train_fft_mean']],
                         std=[config['stats']['train_original_std'],config['stats']['train_fft_std']])])
    
+    train_transform = transforms.Compose([
+    v2.RandomHorizontalFlip(p=0.5),
+    v2.RandomVerticalFlip(p=0.5),
+    v2.RandomChoice([
+        v2.RandomRotation((0, 0)),
+        v2.RandomRotation((90, 90)),
+        v2.RandomRotation((180, 180)),
+        v2.RandomRotation((270, 270))
+    ]),
+    v2.ElasticTransform(alpha=50.0, sigma=5.0), 
+    FftTransform(
+        width=config['fft_params']['notch_width'], 
+        notch_depth=config['fft_params']['notch_depth'],
+        apply_bilateral=config['fft_params']['apply_bilateral'],
+        dual_channel=config['fft_params']['dual_channel'] 
+    ),
+    v2.ColorJitter(brightness=0.1, contrast=0.1),
+    v2.Normalize(
+        mean=[config['stats']['train_original_mean'], config['stats']['train_fft_mean']],
+        std=[config['stats']['train_original_std'], config['stats']['train_fft_std']])])
+   
+   
+   
+   
+   
     val_transform =transforms.Compose([FftTransform(width=config['fft_params']['notch_width'], notch_depth=config['fft_params']['notch_depth'],
                                                     apply_bilateral=config['fft_params']['apply_bilateral'],dual_channel=config['fft_params']['dual_channel']),
                                    transforms.ToTensor(),

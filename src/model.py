@@ -6,7 +6,7 @@ class PhotonicResNet50(nn.Module):
         super().__init__()
         self.model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
         self.num_classes=num_classes
-        # for single-channel FFT input
+        # for FFT input
         a = self.model.conv1
         self.model.conv1 = nn.Conv2d(input_channels, a.out_channels, 
                                      kernel_size=a.kernel_size, stride=a.stride, 

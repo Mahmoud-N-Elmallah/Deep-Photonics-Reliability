@@ -15,9 +15,14 @@ fft_params:
   notch_width: 0.9
 model_hp:
   drop_out: 0.25
-  epochs: 30
+  epochs: 120
   lr: 3.0e-04
   weight_decay: 1.0e-04
+staged_finetuning:
+  enabled: true
+  stage1_epochs: 25
+  stage1_lr: 1.0e-03
+  stage2_lr: 3.0e-04
 stats:
   train_fft_mean: 0.6283
   train_fft_std: 0.1727

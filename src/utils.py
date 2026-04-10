@@ -28,3 +28,21 @@ def compute_class_weights(config: Dict, device: torch.device = None) -> torch.Te
     class_weights = 1.0 / counts
     class_weights = class_weights / class_weights.sum() * len(class_weights)  # Normalize to sum to num_classes
     return class_weights.to(device)
+
+def freeze_backbone(model) -> None:
+    """Freeze all backbone layers for stage 1 training (head only)."""
+    for param in model.model.parameters():
+        param.requires_grad = False
+    logger.info("Backbone frozen. Only training head parameters.")
+
+def unfreeze_layer4(model) -> None:
+    """Unfreeze layer4 for stage 2 fine-tuning."""
+    for param in model.model.layer4.parameters():
+        param.requires_grad = True
+    logger.info("Layer4 unfrozen for stage 2 fine-tuning.")
+
+def unfreeze_head(model) -> None:
+    """Ensure head (fc) is unfrozen for training."""
+    for param in model.model.fc.parameters():
+        param.requires_grad = True
+    logger.info("Head unfrozen and ready for training.")

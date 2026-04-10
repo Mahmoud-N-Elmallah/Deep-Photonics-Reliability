@@ -41,11 +41,11 @@ def freeze_backbone(model) -> None:
         param.requires_grad = False
     logger.info("Backbone frozen (conv1 and bn1 remain trainable for custom input channels).")
 
-def unfreeze_layer4(model) -> None:
-    """Unfreeze layer4 for stage 2 fine-tuning."""
-    for param in model.model.layer4.parameters():
+def unfreeze_all(model) -> None:
+    """Unfreeze the entire model for full fine-tuning."""
+    for param in model.parameters():
         param.requires_grad = True
-    logger.info("Layer4 unfrozen for stage 2 fine-tuning.")
+    logger.info("Entire model unfrozen for full fine-tuning.")
 
 def unfreeze_head(model) -> None:
     """Ensure head (fc) is unfrozen for training."""

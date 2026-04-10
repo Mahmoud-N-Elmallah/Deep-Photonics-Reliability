@@ -90,7 +90,7 @@ def main():
         if use_staged and start_epoch >= stage1_epochs:
             print(f"Resuming in STAGE 2 (layer4 + head fine-tuning)")
             # Already unfrozen by checkpoint state
-            unfreeze_layer4(model)
+            unfreeze_all(model)
             unfreeze_head(model)
             optimizer = torch.optim.AdamW(model.parameters(), lr=stage2_lr,
                                         weight_decay=config['model_hp']['weight_decay'])

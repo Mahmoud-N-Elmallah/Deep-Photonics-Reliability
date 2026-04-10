@@ -85,8 +85,8 @@ def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, 
             print(f"TRANSITIONING TO STAGE 2: Fine-tuning layer4 + head")
             print(f"{'='*60}\n")
             
-            # Unfreeze layer4
-            unfreeze_layer4(model)
+            # Unfreeze the entire model
+            unfreeze_all(model)
             
             # Create new optimizer with stage2 LR
             optimizer = torch.optim.AdamW(model.parameters(), lr=stage2_lr,

@@ -17,7 +17,7 @@ class PhotonicResNet50(nn.Module):
         self.model.fc = nn.Sequential(
             nn.Dropout(p=dropout_prob),
             nn.Linear(in_features=a.in_features, out_features=1024, bias=True),
-            nn.BatchNorm1d(),
+            nn.BatchNorm1d(1024),
             nn.ReLU(),
             nn.Dropout(dropout_prob),
             nn.Linear(1024,self.num_classes,bias=True)

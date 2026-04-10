@@ -140,6 +140,10 @@ def main():
     
     train_loader, val_loader, test_loader, input_channels = build_loaders(config, project_root, experiment_type)
     
+    # CRITICAL: Overwrite training transforms to be deterministic for CAM generation.
+    # This ensures masks align with original raw images instead of random augmentations.
+    train_loader.dataset.transform = val_loader.dataset.transform
+    
     # 2. Build and Load Model
     num_classes = len(config.get('train_class_count', {0: 1, 1: 1, 2: 1, 3: 1}))
     model = PhotonicResNet18(input_channels=input_channels, num_classes=num_classes).to(device)
@@ -167,7 +171,7 @@ def main():
     loaders = {'train': train_loader, 'val': val_loader}
     
     for split_name, loader in loaders.items():
-        print(f"Processing {split_name} split...")
+        print(f"\nProcessing {split_name} split with deterministic transforms...")
         os.makedirs(vis_dir / split_name, exist_ok=True)
         os.makedirs(mask_dir / split_name, exist_ok=True)
         

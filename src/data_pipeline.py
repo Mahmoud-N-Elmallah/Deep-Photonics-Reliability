@@ -1,10 +1,11 @@
 import torch
 from torch.utils.data import DataLoader, WeightedRandomSampler
+from torchvision.transforms import v2
 from torchvision import transforms
 from typing import Dict
 from pathlib import Path
 from physics_utils import *
-from dataset_dataloader import *
+from dataset import *
 
 def build_loaders(config: Dict, project_root: Path = None):
 
@@ -13,7 +14,7 @@ def build_loaders(config: Dict, project_root: Path = None):
     FftTransform(
         width=config['fft_params']['notch_width'], 
         notch_depth=config['fft_params']['notch_depth'],
-        apply_bilateral=config['fft_params']['apply_bilateral']),
+        apply_bilateral=config['fft_params']['apply_bilateral'],dual_channel=config['fft_params']['dual_channel']),
     transforms.RandomHorizontalFlip(p=0.5),
     transforms.RandomVerticalFlip(p=0.5),
     # Rotations (90 deg increase) to not destroy the fft transform
@@ -24,12 +25,11 @@ def build_loaders(config: Dict, project_root: Path = None):
         transforms.RandomRotation((270, 270))
     ]),
     transforms.ToTensor(),
-    transforms.Normalize(
-        mean=[config['stats']['train_fft_mean']], 
-        std=[config['stats']['train_fft_std']])])
+    transforms.Normalize(mean=[config['stats']['train_original_mean'],config['stats']['train_fft_mean']],
+                        std=[config['stats']['train_original_std'],config['stats']['train_fft_std']])])
    
     val_transform =transforms.Compose([FftTransform(width=config['fft_params']['notch_width'], notch_depth=config['fft_params']['notch_depth'],
-                                                    apply_bilateral=config['fft_params']['apply_bilateral']),
+                                                    apply_bilateral=config['fft_params']['apply_bilateral'],dual_channel=config['fft_params']['dual_channel']),
                                    transforms.ToTensor(),
                                    transforms.Normalize(mean=[config['stats']['train_fft_mean']], std=[config['stats']['train_fft_std']])])
 

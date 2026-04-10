@@ -10,16 +10,19 @@ data_path:
   val: C:\Projects\PV Cells Fault CV\Deep-Photonics-Reliability\data\val_data.csv
 fft_params:
   apply_bilateral: true
-  notch_depth: 0.85
-  notch_width: 0.5
+  dual_channel: true
+  notch_depth: 0.99
+  notch_width: 0.9
 model_hp:
   drop_out: 0.25
   epochs: 90
   lr: 5.0e-05
   weight_decay: 0.03
 stats:
-  train_fft_mean: 0.6273
-  train_fft_std: 0.1824
+  train_fft_mean: 0.6283
+  train_fft_std: 0.1727
+  train_original_mean: 0.5977
+  train_original_std: 0.1607
 train_class_count:
   0: 1206
   1: 236

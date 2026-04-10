@@ -1,7 +1,7 @@
 from utils import *
 from data_pipeline import *
 from model import *
-from training_engine import train_model
+from training_engine import *
 import torch.nn as nn
 import torch
 from torch.optim.lr_scheduler import CosineAnnealingLR

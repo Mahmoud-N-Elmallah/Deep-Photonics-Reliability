@@ -35,7 +35,7 @@ def build_loaders(config: Dict, project_root: Path = None, experiment_type: str 
             v2.RandomRotation((180, 180)),
             v2.RandomRotation((270, 270))
         ]),
-        v2.ElasticTransform(alpha=50.0, sigma=5.0), 
+        v2.ElasticTransform(alpha=20.0, sigma=2.5), 
         FftTransform(
             width=config['fft_params']['notch_width'], 
             depth=config['fft_params']['notch_depth'],

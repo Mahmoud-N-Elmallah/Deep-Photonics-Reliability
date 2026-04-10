@@ -2,7 +2,7 @@ import torch.nn as nn
 from torchvision import models
 
 class PhotonicResNet50(nn.Module):
-    def __init__(self, input_channels: int = 2, num_classes: int = 4,dropout_prob: float =0.3):
+    def __init__(self, input_channels: int = 1, num_classes: int = 4,dropout_prob: float =0.3):
         super().__init__()
         self.model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
         self.num_classes=num_classes

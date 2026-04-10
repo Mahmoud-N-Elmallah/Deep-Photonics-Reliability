@@ -42,3 +42,15 @@ def reconstruct_image(filtered_dft, apply_bilateral=True):
         
     return recon_rescaled
 
+def enhance_defects_clahe(image, clip_limit=3.0, tile_grid_size=(8, 8)):
+    # Applies CLAHE to heavily contrast the faults against the background
+    clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=tile_grid_size)
+    return clahe.apply(image)
+
+def enhance_defects_sobel(image):
+    # Applies Sobel edge detection to highlight cracks
+    grad_x = cv2.Sobel(image, cv2.CV_64F, 1, 0, ksize=3)
+    grad_y = cv2.Sobel(image, cv2.CV_64F, 0, 1, ksize=3)
+    abs_grad_x = cv2.convertScaleAbs(grad_x)
+    abs_grad_y = cv2.convertScaleAbs(grad_y)
+    return cv2.addWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0)

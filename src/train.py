@@ -58,7 +58,8 @@ def main():
     start_epoch = 0
     
     train_loader, val_loader, test_loader, input_channels = build_loaders(config, project_root, experiment_type)
-    model = PhotonicResNet18(input_channels=input_channels, dropout_prob=config['model_hp']['drop_out']).to(device)
+    num_classes = len(config.get('train_class_count', {0: 1, 1: 1, 2: 1, 3: 1}))
+    model = PhotonicResNet18(input_channels=input_channels, num_classes=num_classes, dropout_prob=config['model_hp']['drop_out']).to(device)
     
     # STAGE 1 SETUP: Freeze backbone, train head only
     staged_config = config.get('staged_finetuning', {})

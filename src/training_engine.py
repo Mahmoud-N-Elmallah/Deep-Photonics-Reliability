@@ -89,7 +89,9 @@ def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, 
                                         weight_decay=config.get('model_hp', {}).get('weight_decay', 1e-4))
             
             # Switch to ReduceLROnPlateau for stage 2
-            scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=10)
+            scheduler_factor = config.get('model_hp', {}).get('scheduler_factor', 0.5)
+            scheduler_patience = config.get('model_hp', {}).get('scheduler_patience', 10)
+            scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=scheduler_factor, patience=scheduler_patience)
             
             history['training_stage'] = 'stage2'
             stage_transitioned = True
@@ -115,7 +117,8 @@ def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, 
             
             scaler.scale(loss).backward()
             scaler.unscale_(optimizer)
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            max_norm = config.get('model_hp', {}).get('clip_grad_norm', 1.0) if config else 1.0
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=max_norm)
             scaler.step(optimizer)
             scaler.update()
             
@@ -155,7 +158,8 @@ def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, 
         if epoch_val_f1 > best_val_f1:
             best_val_f1 = epoch_val_f1
             history['best_val_f1'] = best_val_f1
-            best_model_path = checkpoint_dir / "best_photonics_fft_resnet18.pth"
+            best_model_name = config.get('experiment', {}).get('best_model_name', 'best_model.pth') if config else 'best_model.pth'
+            best_model_path = checkpoint_dir / best_model_name
             torch.save(model.state_dict(), str(best_model_path))
             print("New Best Model Saved!")
 

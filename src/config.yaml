@@ -1,7 +1,3 @@
-# Experiment configuration - Options: "dual_channel", "original_only", "fft_only"
-experiment:
-  name: "dual_channel"
-
 batch_size: 32
 class_weight:
   - 0.0008291873964481056
@@ -12,22 +8,43 @@ data_path:
   test: C:\Projects\PV Cells Fault CV\Deep-Photonics-Reliability\data\test_data.csv
   train: C:\Projects\PV Cells Fault CV\Deep-Photonics-Reliability\data\train_data.csv
   val: C:\Projects\PV Cells Fault CV\Deep-Photonics-Reliability\data\val_data.csv
+experiment:
+  name: tri_channel
 fft_params:
   apply_bilateral: true
+  clahe_clip_limit: 3.0
   dual_channel: true
+  enhancement_method: clahe
   notch_depth: 0.99
   notch_width: 0.9
 model_hp:
   drop_out: 0.3
   epochs: 120
-  lr: 3.0e-04
-  weight_decay: 1.0e-04
+  lr: 0.0003
+  weight_decay: 0.0001
+  clip_grad_norm: 1.0
+  scheduler_factor: 0.5
+  scheduler_patience: 10
+dataloader:
+  num_workers: 4
+  pin_memory: true
+  persistent_workers: true
+augmentations:
+  resize: 224
+  elastic_alpha: 20.0
+  elastic_sigma: 2.5
+  color_jitter_brightness: 0.15
+  color_jitter_contrast: 0.15
+  horizontal_flip_prob: 0.5
+  vertical_flip_prob: 0.5
 staged_finetuning:
   enabled: true
   stage1_epochs: 25
-  stage1_lr: 1.0e-03
-  stage2_lr: 3.0e-04
+  stage1_lr: 0.001
+  stage2_lr: 0.0003
 stats:
+  train_enhanced_mean: 0.5871
+  train_enhanced_std: 0.2194
   train_fft_mean: 0.6283
   train_fft_std: 0.1727
   train_original_mean: 0.5977

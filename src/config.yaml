@@ -15,7 +15,7 @@ fft_params:
   notch_width: 0.9
 model_hp:
   drop_out: 0.25
-  epochs: 90
+  epochs: 30
   lr: 5.0e-05
   weight_decay: 0.03
 stats:

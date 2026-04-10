@@ -76,7 +76,7 @@ def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, 
     
     for epoch in range(start_epoch, epochs):
         # === STAGE TRANSITION: Move to stage 2 after stage1_epochs ===
-        if use_staged and not stage_transitioned and epoch == stage1_epochs:
+        if use_staged and not stage_transitioned and epoch >= stage1_epochs:
             print(f"\n{'='*60}")
             print(f"TRANSITIONING TO STAGE 2: Fine-tuning layer4 + head")
             print(f"{'='*60}\n")

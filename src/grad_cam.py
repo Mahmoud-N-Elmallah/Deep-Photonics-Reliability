@@ -123,6 +123,7 @@ def main():
     cam_cfg = config.get('cam_params', {})
     percentile_threshold = cam_cfg.get('percentile_threshold', 75)
     morph_kernel_size = cam_cfg.get('morph_kernel_size', 3)
+    visualize_every = cam_cfg.get('visualize_every', 20) # Only plot every 20th image to save time
     
     out_dir = Path(cam_cfg.get('output_dir', project_root / 'data' / 'pseudo_masks'))
     vis_dir = out_dir / 'visuals'
@@ -137,7 +138,7 @@ def main():
     config['dataloader']['num_workers'] = 0 # Safe sequential execution
     config['dataloader']['persistent_workers'] = False
     experiment_type = config.get('experiment', {}).get('name', 'tri_channel')
-    
+
     train_loader, val_loader, test_loader, input_channels = build_loaders(config, project_root, experiment_type)
     
     # CRITICAL: Overwrite training transforms to be deterministic for CAM generation.
@@ -175,42 +176,38 @@ def main():
         os.makedirs(vis_dir / split_name, exist_ok=True)
         os.makedirs(mask_dir / split_name, exist_ok=True)
         
-        # Sequentially process images to map masks back to original file names
         for idx in tqdm(range(len(loader.dataset))):
             img_tensor, label = loader.dataset[idx] 
             img_path = loader.dataset.data['path'][idx]
             base_name = Path(img_path).stem
-            
-            # Formulate [1, C, H, W] tensor for model
             input_tensor = img_tensor.unsqueeze(0).to(device)
             
-            # Compute Grad-CAM for predicted class
+            # Compute Grad-CAM
             cam, pred_class, logits = cam_extractor(input_tensor, target_class=None)
             
             # Calculate confidence score
             probs = F.softmax(logits.unsqueeze(0), dim=1)
             confidence = probs[0, pred_class].item()
             
-            # Generate Pseudo Mask based on Grad-CAM activations
+            # 1. ALWAYS Generate and Save Pseudo Mask
             mask = create_pseudo_mask(cam, percentile=percentile_threshold, kernel_size=morph_kernel_size)
-            
-            # Save raw mask for downstream physics-constrained training/analysis
             cv2.imwrite(str(mask_dir / split_name / f"{base_name}_mask.png"), mask)
             
-            # Generate visualization for qualitative analysis
-            img_tensor_cpu = img_tensor.clone().cpu()
-            denormed_img = denormalize(img_tensor_cpu, norm_mean[:input_channels], norm_std[:input_channels]).numpy()
-            
-            raw_channel = denormed_img[0]
-            fft_channel = denormed_img[1] if input_channels > 1 else raw_channel
-            enh_channel = denormed_img[2] if input_channels == 3 else fft_channel
-            
-            plot_and_save_visuals(
-                raw_channel, fft_channel, enh_channel, cam, mask, 
-                vis_dir / split_name / f"{base_name}_cam.jpg", 
-                pred_class, 
-                f"Conf: {confidence:.2f}"
-            )
+            # 2. SELECTIVELY Generate Visualization (to save time)
+            if idx % visualize_every == 0:
+                img_tensor_cpu = img_tensor.clone().cpu()
+                denormed_img = denormalize(img_tensor_cpu, norm_mean[:input_channels], norm_std[:input_channels]).numpy()
+                
+                raw_channel = denormed_img[0]
+                fft_channel = denormed_img[1] if input_channels > 1 else raw_channel
+                enh_channel = denormed_img[2] if input_channels == 3 else fft_channel
+                
+                plot_and_save_visuals(
+                    raw_channel, fft_channel, enh_channel, cam, mask, 
+                    vis_dir / split_name / f"{base_name}_cam.jpg", 
+                    pred_class, 
+                    f"Conf: {confidence:.2f}"
+                )
 
     print("Grad-CAM generation and Pseudo-mask creation complete. Results saved to data/pseudo_masks.")
 

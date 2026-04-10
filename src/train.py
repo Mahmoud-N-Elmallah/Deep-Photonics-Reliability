@@ -122,7 +122,8 @@ def main():
         optimizer = torch.optim.AdamW(model.parameters(), lr=stage1_lr,
                                     weight_decay=config['model_hp']['weight_decay'])
     
-    loss_fn = nn.CrossEntropyLoss(weight=class_weights)
+    label_smoothing = config.get('model_hp', {}).get('label_smoothing', 0.0)
+    loss_fn = nn.CrossEntropyLoss(weight=class_weights, label_smoothing=label_smoothing)
     scheduler = CosineAnnealingLR(optimizer, T_max=stage1_epochs) if use_staged else torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=10)
     
     # Get total epochs from config

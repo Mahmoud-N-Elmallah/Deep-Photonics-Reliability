@@ -60,6 +60,10 @@ def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, 
         history['best_val_f1'] = 0.0
     if 'training_stage' not in history:
         history['training_stage'] = 'stage1' if stage1_epochs else 'full'
+    if 'best_val_loss' not in history:
+        history['best_val_loss'] = float('inf')
+    if 'patience_counter' not in history:
+        history['patience_counter'] = 0
     
     scaler = GradScaler()
     best_val_f1 = history['best_val_f1']
@@ -94,6 +98,8 @@ def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, 
             scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=scheduler_factor, patience=scheduler_patience)
             
             history['training_stage'] = 'stage2'
+            history['patience_counter'] = 0
+            history['best_val_loss'] = float('inf') # Reset to let stage 2 find its own best loss
             stage_transitioned = True
             print(f"Stage 2 LR: {stage2_lr}, Epochs remaining: {epochs - epoch}\n")
         
@@ -176,5 +182,19 @@ def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, 
             # latest checkpoint for later  resuming of the training
             latest_checkpoint_path = checkpoint_dir / "latest_checkpoint.pkl"
             torch.save(checkpoint, latest_checkpoint_path)
+            
+        # Early Stopping check
+        best_val_loss = history['best_val_loss']
+        early_stopping_patience = config.get('model_hp', {}).get('early_stopping_patience', 15)
+        
+        if val_loss < best_val_loss:
+            history['best_val_loss'] = val_loss
+            history['patience_counter'] = 0
+            # Note: best model is saved based on F1, but we track loss for early stopping
+        else:
+            history['patience_counter'] += 1
+            if history['patience_counter'] >= early_stopping_patience:
+                print(f"\nEarly stopping triggered! No improvement in validation loss for {early_stopping_patience} epochs.")
+                break
         
     return history, model

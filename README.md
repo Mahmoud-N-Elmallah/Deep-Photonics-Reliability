@@ -17,7 +17,7 @@ Electroluminescence (EL) imaging is the non-destructive optical technique for de
 
 ### The Challenge: Signal vs. Noise in Complex Imagery
 However, EL images are *optically crowded*. A single solar cell image contains:
-- **Deterministic grid pattern**: The metal busbar and finger grid—the cell's electrical backbone—creates a dominant periodic structure that can mislead standard CNNs into learning spurious correlations.
+- **Deterministic grid pattern**: The metal busbar and finger grid which works as the cell's electrical backbone,creates a dominant periodic structure that can mislead standard CNNs into learning spurious correlations.
 - **Stochastic defects**: Micro-cracks, material inclusions, and contact failures appear as localized dark regions (non-radiative recombination "sinks").
 
 Standard CNNs, trained purely on classification accuracy, often exploit the high-contrast, easy-to-learn grid structure rather than learning the subtle geometric signatures of defects. This is the **"Black-Box Problem"**: high accuracy on test data does not guarantee physical understanding.
@@ -28,7 +28,7 @@ In optical imaging systems, the fundamental physics is known:
 2. **Frequency domain signature**: The periodic grid manifests as high-magnitude spikes in Fourier space; defects are stochastic deviations from periodicity.
 3. **Radiative vs. non-radiative recombination**: The optical physics dictates where light is emitted (or not).
 
-By integrating these principles into the loss function and supervision strategy, we enforce the model to learn physically meaningful representations—features that generalize beyond the training distribution.
+By integrating these principles into the loss function and supervision strategy, we enforce the model to learn physically meaningful representations features that generalize beyond the training distribution.
 
 ---
 
@@ -43,7 +43,7 @@ By integrating these principles into the loss function and supervision strategy,
 3. Design and apply a **Gaussian notch filter** centered on these grid harmonics.
 4. Reconstruct via **Inverse FFT (IFFT)** to obtain a "grid-suppressed" image in spatial domain.
 
-**Physical Justification**: The grid's periodicity is deterministic and device-specific; suppressing it reduces the signal-to-noise ratio for the model, forcing focus on deviations from periodicity—where defects lie.
+**Physical Justification**: The grid's periodicity is deterministic and device-specific; suppressing it reduces the signal-to-noise ratio for the model, forcing focus on deviations from periodicity where defects lie.
 
 **Result**: An FFT-cleaned channel that highlights stochastic anomalies, complementing the raw image.
 
@@ -210,7 +210,7 @@ The model is trained on the raw tri-channel input with standard cross-entropy lo
 **Key Observations**:
 - Validation accuracy plateaus around **85–88%** by epoch 40–50.
 - Loss curves show stable convergence without catastrophic forgetting.
-- CAM analysis (Phase 3) reveals that the model has learned to discriminate based on the grid structure—a partial success, but not fully physically grounded.
+- CAM analysis (Phase 3) reveals that the model has learned to discriminate based on the grid structure,a partial success, but not fully physically grounded.
 
 ### Phase 3: Pseudo-Mask Auditing
 Using Grad-CAM, we identify ~15–20% of training samples with "hallucinated" masks (broad, unfocused attention). These are flagged for potential de-weighting in Phase 4.

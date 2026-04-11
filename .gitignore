@@ -1,6 +1,6 @@
 # my ignores
 data/images
-data/pseudo_masks/
+data/pseudo_masks/*
 .venv/
 
 # Ignore all checkpoint and model save files
@@ -12,15 +12,17 @@ checkpoints/
 *.keras
 *.onnx
 *.pb
-data\phase_comparison
 README.md
 
 # ALLOW README ASSETS
 !scratch/training_plot.png
-!results/final_evaluation/confusion_matrix.png
-!results/final_evaluation/blind_test_0.jpg
-!data/phase_comparison/cell0010_comparison.jpg
-!data/phase_comparison/cell0517_comparison.jpg
+!results/final_evaluation/*.png
+!results/final_evaluation/*.jpg
+!data/phase_comparison/*.jpg
+
+# Un-ignoring specific pseudo-mask visuals
+!data/pseudo_masks/visuals/
+!data/pseudo_masks/visuals/train/
 !data/pseudo_masks/visuals/train/cell0013_cam.jpg
 !data/pseudo_masks/visuals/train/cell0031_cam.jpg
 !data/pseudo_masks/visuals/train/cell0112_cam.jpg

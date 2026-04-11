@@ -5,7 +5,7 @@ Deep Photonics Reliability is a state-of-the-art deep learning pipeline document
 
 ---
 
-## Scientific Roadmap
+## Roadmap
 
 ### Phase 1: Signal-Aided Data Engineering (FFT)
 *   **Significance**: PV cells exhibit periodic manufacturing structures. Filtering this periodicity in the frequency domain allows the model to prioritize stochastic deviations (faults) over the deterministic background grid.
@@ -50,7 +50,11 @@ Deep Photonics Reliability is a state-of-the-art deep learning pipeline document
 
 ### 5. Blind-Test Inference (Unseen Data)
 ![Test Sample 0](results/final_evaluation/blind_test_0.jpg)
-*   **Elaboration**: This Blind Test demonstrates generalization to totally novel data. The localization of the fault proves the architecture has internalized robust physical features rather than specific training-set noise.
+![Test Sample 1](results/final_evaluation/blind_test_1.jpg)
+![Test Sample 2](results/final_evaluation/blind_test_2.jpg)
+![Test Sample 3](results/final_evaluation/blind_test_3.jpg)
+
+*   **Elaboration**: These **Blind Tests** demonstrate generalization to totally novel data across various fault conditions. The consistent localization of faults (ranging from micro-cracks to PID clusters) confirms that the architecture has internalized robust physical features rather than specific training-set noise. The high-confidence activations on unseen samples indicate that the physics constraint successfully regularized the feature space.
 
 ---
 

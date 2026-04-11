@@ -320,21 +320,14 @@ The power of this pipeline lies in explicitly grounding deep learning decisions 
 
 ### Running the Pipeline
 ```bash
-# Phase 1–2: Tri-channel supervised training
-python main.py --phase 1-2 --config src/config.yaml
-
-# Phase 3: Grad-CAM audit & pseudo-mask generation
-python src/grad_cam.py --model checkpoints/phase2.pth --data data/images
-
-# Phase 4: Physics-constrained fine-tuning
-python src/train_phase4.py --phase2_checkpoint checkpoints/phase2.pth \
-                           --masks data/pseudo_masks/masks \
-                           --config src/config.yaml
-
-# Evaluation
-python src/evaluate_test_set.py --model checkpoints/phase4.pth \
-                                --test_data data/test_set.csv \
-                                --output results/final_evaluation
+ Run the COMPLETE pipeline from start to finish
+# (Includes data stats, Phase 1-2, Phase 3 masks, Phase 4 tuning, and Evaluation)
+python main.py
+# Optional: Run specific phases through the orchestrator
+python main.py --phase 1-2   # Only train the baseline model
+python main.py --phase 3     # Only generate explainability masks
+python main.py --phase 4     # Only run physics-constrained tuning
+python main.py --phase eval  # Only run final evaluation on test set
 ```
 
 ---

@@ -47,8 +47,6 @@ Electroluminescence is the phenomenon where a material emits light in response t
 
 ### A. Raw Dataset Primer: The Severity Scale
 | Normal (0.00) | Minor-Defect (0.33) | Moderate-Defect (0.67) | Major-Defect (1.00) |
-| :---: | :---: | :---: | :---: |
-| ![Normal](results/sample_images/normal.png) | ![Minor](results/sample_images/minor.png) | ![Moderate](results/sample_images/moderate.png) | ![Major](results/sample_images/major.png) |
 
 *   **Elaboration**: The dataset categorization is based on a probability scale. While it focuses on structural cracks, the labels reflect the likelihood of the defect impacting the overall module efficiency.
 

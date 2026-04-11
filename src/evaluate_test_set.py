@@ -87,7 +87,7 @@ def run_final_evaluation():
             all_labels.extend(labels.numpy())
             
     # 5. Statistical Analysis
-    target_names = ['Normal', 'Crack', 'PID', 'Busbar']
+    target_names = ['Normal', 'Minor-Defect', 'Moderate-Defect', 'Major-Defect']
     report = classification_report(all_labels, all_preds, target_names=target_names)
     cm = confusion_matrix(all_labels, all_preds)
     
@@ -115,7 +115,7 @@ def run_final_evaluation():
     norm_mean = [config['stats']['train_original_mean'], config['stats']['train_fft_mean'], config['stats']['train_enhanced_mean']]
     norm_std = [config['stats']['train_original_std'], config['stats']['train_fft_std'], config['stats']['train_enhanced_std']]
     
-    indices = np.random.choice(len(test_loader.dataset), 5, replace=False)
+    indices = np.random.choice(len(test_loader.dataset), 12, replace=False)
     
     for i, idx in enumerate(indices):
         img_tensor, label = test_loader.dataset[idx]
@@ -133,7 +133,7 @@ def run_final_evaluation():
         plt.imshow(cam, cmap='jet', alpha=0.45)
         plt.axis('off')
         
-        title = f"Test Sample {i}\nTrue: {target_names[label]} | Pred: {target_names[pred]} ({conf:.1%})"
+        title = f"Test Sample\nTrue: {target_names[label]} | Pred: {target_names[pred]} ({conf:.1%})"
         if label == pred:
             plt.title(title, color='green')
         else:

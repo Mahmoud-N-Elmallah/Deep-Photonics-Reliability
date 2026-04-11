@@ -18,6 +18,7 @@ README.md
 !scratch/training_plot.png
 !results/final_evaluation/*.png
 !results/final_evaluation/*.jpg
+!results/sample_images/*.png
 !data/phase_comparison/*.jpg
 
 # Un-ignoring specific pseudo-mask visuals

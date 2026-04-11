@@ -1,9 +1,7 @@
 # Deep Photonics Reliability: Physics-Constrained PV Fault Analysis
 
 ## Project Mission: Bridging Physics and Deep Learning
-Deep Photonics Reliability is a comprehensive research pipeline designed to solve the **"Black Box" Problem** in Photovoltaic (PV) Electroluminescence (EL) image classification. Standard deep learning models often optimize based on visual artifacts unrelated to the actual physics of the cell (e.g., background noise). 
-
-This project implements a **Physics-Constrained Supervision** framework. It forces the model to ignore deterministic manufacturing patterns and strictly prioritize the spatial geometry of structural anomalies, such as micro-cracks and material inclusions. The pipeline follows a curriculum-based learning approach across four distinct phases.
+Deep Photonics Reliability is a comprehensive research pipeline designed to solve the **"Black Box" Problem** in Photovoltaic (PV) Electroluminescence (EL) image classification. Unlike standard classifiers that may optimize for non-physical background artifacts, this project implements **Physics-Constrained Supervision** to enforce spatial focus on the physical geometry of structural anomalies, such as micro-cracks and material inclusions. The pipeline follows a curriculum-based learning approach across four distinct phases.
 
 ---
 
@@ -49,13 +47,20 @@ Electroluminescence is the phenomenon where a material emits light in response t
 
 ### A. Raw Dataset Primer: The Severity Scale
 | Normal (0.00) | Minor-Defect (0.33) | Moderate-Defect (0.67) | Major-Defect (1.00) |
+| :---: | :---: | :---: | :---: |
+| ![Normal](results/sample_images/normal.png) | ![Minor](results/sample_images/minor.png) | ![Moderate](results/sample_images/moderate.png) | ![Major](results/sample_images/major.png) |
+
 *   **Elaboration**: The dataset categorization is based on a probability scale. While it focuses on structural cracks, the labels reflect the likelihood of the defect impacting the overall module efficiency.
 
 ### B. Phase 3: Automated Teacher-Mask Generation
-| | | | |
-| :---: | :---: | :---: | :---: |
-| ![CAM 0013](data/pseudo_masks/visuals/train/cell0013_cam.jpg) | ![CAM 0031](data/pseudo_masks/visuals/train/cell0031_cam.jpg) | ![CAM 0112](data/pseudo_masks/visuals/train/cell0112_cam.jpg) | ![CAM 0115](data/pseudo_masks/visuals/train/cell0115_cam.jpg) |
-| ![CAM 0171](data/pseudo_masks/visuals/train/cell0171_cam.jpg) | ![CAM 0242](data/pseudo_masks/visuals/train/cell0242_cam.jpg) | ![CAM 0375](data/pseudo_masks/visuals/train/cell0375_cam.jpg) | ![CAM 0438](data/pseudo_masks/visuals/train/cell0438_cam.jpg) |
+![CAM 0013](data/pseudo_masks/visuals/train/cell0013_cam.jpg)
+![CAM 0031](data/pseudo_masks/visuals/train/cell0031_cam.jpg)
+![CAM 0112](data/pseudo_masks/visuals/train/cell0112_cam.jpg)
+![CAM 0115](data/pseudo_masks/visuals/train/cell0115_cam.jpg)
+![CAM 0171](data/pseudo_masks/visuals/train/cell0171_cam.jpg)
+![CAM 0242](data/pseudo_masks/visuals/train/cell0242_cam.jpg)
+![CAM 0375](data/pseudo_masks/visuals/train/cell0375_cam.jpg)
+![CAM 0438](data/pseudo_masks/visuals/train/cell0438_cam.jpg)
 
 *   **Elaboration**: These samples illustrate the automated extraction of anomaly paths using Grad-CAM. By setting thresholds on activations, the system generates localized "teacher masks" that provide the ground-truth guidance for Phase 4.
 
@@ -64,9 +69,8 @@ Electroluminescence is the phenomenon where a material emits light in response t
 *   **Analysis**: Sample 0508 represents a "hallucinated" mask. Note how the focus is diffuse across the whole cell rather than on a structural line. Our **Phase 4 Quality Filter** automatically identifies and ignores such masks to prevent the propagation of visual noise.
 
 ### D. Phases Comparison: "Attention Sharpening"
-| Comparison Sample 0010 | Comparison Sample 0517 |
-| :---: | :---: |
-| ![Phase Comparison 0010](data/phase_comparison/cell0010_comparison.jpg) | ![Phase Comparison 0517](data/phase_comparison/cell0517_comparison.jpg) |
+![Phase Comparison 0010](data/phase_comparison/cell0010_comparison.jpg)
+![Phase Comparison 0517](data/phase_comparison/cell0517_comparison.jpg)
 
 *   **Interpretation**: In Phase 3 (Standard), activations are broad and "leaky." In Phase 4 (Physics-Aware), the attention maps are **sharpened** and strictly locked onto the physical structural paths. This is the result of **Quadratic Attention Sharpening** integrated into the forward pass.
 

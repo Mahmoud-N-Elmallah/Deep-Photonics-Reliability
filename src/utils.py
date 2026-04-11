@@ -28,3 +28,32 @@ def compute_class_weights(config: Dict, device: torch.device = None) -> torch.Te
     class_weights = 1.0 / torch.sqrt(counts)
     class_weights = class_weights / class_weights.sum() * len(class_weights)  # Normalize to sum to num_classes
     return class_weights.to(device)
+
+def get_loss_function(config: Dict, device: torch.device):
+    """Factory for selecting loss function based on config."""
+    class_weights = compute_class_weights(config, device=device)
+    loss_type = config['model_hp'].get('loss_type', 'ce')
+    label_smoothing = config['model_hp'].get('label_smoothing', 0.0)
+    
+    if loss_type == 'ce':
+        return torch.nn.CrossEntropyLoss(weight=class_weights, label_smoothing=label_smoothing)
+    else:
+        # Fallback to standard CE
+        return torch.nn.CrossEntropyLoss(weight=class_weights)
+
+def get_optimizer(model, config: Dict):
+    """Initialize AdamW optimizer with weight decay."""
+    return torch.optim.AdamW(
+        model.parameters(), 
+        lr=config['model_hp']['lr'],
+        weight_decay=config['model_hp']['weight_decay']
+    )
+
+def get_scheduler(optimizer, config: Dict):
+    """Initialize ReduceLROnPlateau scheduler."""
+    return torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, 
+        mode='min', 
+        factor=config['model_hp'].get('scheduler_factor', 0.5), 
+        patience=config['model_hp'].get('scheduler_patience', 10)
+    )

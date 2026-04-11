@@ -15,13 +15,12 @@ class PhotonicResNet18(nn.Module):
                                      padding=old_conv1.padding, bias=False)
         
         # Smart initialization: average pretrained RGB weights into grayscale filter(s)
-        # This gives the new conv1 a meaningful starting point instead of random noise
         with torch.no_grad():
-            pretrained_weight = old_conv1.weight  # shape [64, 3, 7, 7]
-            avg_weight = pretrained_weight.mean(dim=1, keepdim=True)  # [64, 1, 7, 7]
+            pretrained_weight = old_conv1.weight  
+            avg_weight = pretrained_weight.mean(dim=1, keepdim=True)  
             self.model.conv1.weight.copy_(avg_weight.repeat(1, input_channels, 1, 1))
         
-        # Adaptation for output classes (ResNet18 has 512-dim features)
+        # Adaptation for output classes
         old_fc = self.model.fc
         self.model.fc = nn.Sequential(
             nn.Dropout(p=dropout_prob),
@@ -32,6 +31,37 @@ class PhotonicResNet18(nn.Module):
             nn.Linear(256, self.num_classes, bias=True)
         )
 
-    def forward(self, x):
-        x = self.model(x)
-        return x
+    def forward(self, x, return_attention=False):
+        if not return_attention:
+            return self.model(x)
+        
+        # Manually perform forward pass to get features for attention
+        x = self.model.conv1(x)
+        x = self.model.bn1(x)
+        x = self.model.relu(x)
+        x = self.model.maxpool(x)
+
+        x = self.model.layer1(x)
+        x = self.model.layer2(x)
+        x = self.model.layer3(x)
+        x = self.model.layer4(x)
+        
+        feature_map = x 
+        
+        x = self.model.avgpool(x)
+        x = torch.flatten(x, 1)
+        # ResNet18 fc is our Sequential block
+        logits = self.model.fc(x)
+        
+        # Calculate Attention Map: Mean over channels 
+        attention_map = torch.mean(feature_map, dim=1, keepdim=True) 
+        
+        # Min-Max Normalization per batch sample
+        B, C, H, W = attention_map.shape
+        flat_map = attention_map.view(B, -1)
+        map_min = flat_map.min(dim=1, keepdim=True)[0]
+        map_max = flat_map.max(dim=1, keepdim=True)[0]
+        norm_attention = (flat_map - map_min) / (map_max - map_min + 1e-8)
+        norm_attention = norm_attention.view(B, 1, H, W)
+        
+        return logits, norm_attention

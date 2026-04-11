@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 from tqdm import tqdm
 from torch.amp import GradScaler
 from pathlib import Path
@@ -6,17 +7,22 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau, CosineAnnealingLR
 from sklearn.metrics import f1_score
 from utils import *
 
-def evaluate(model, loader, loss_fn, device):
+def evaluate(model, loader, loss_fn, device, is_physics=False):
     model.eval()
     val_loss = 0.0
     all_preds = []
     all_labels = []
     correct = 0
     total = 0
-    device_type = str(device).split(':')[0]  # Extract 'cuda' since this is how the new methhod works instead of the old deprecated one
+    device_type = str(device).split(':')[0]
     
     with torch.no_grad():
-        for X, y in loader:
+        for batch in loader:
+            if is_physics:
+                X, mask, y = batch
+            else:
+                X, y = batch
+                
             X, y = X.to(device), y.to(device)
             with torch.amp.autocast(device_type=device_type):
                 outputs = model(X)
@@ -35,55 +41,65 @@ def evaluate(model, loader, loss_fn, device):
     
     return avg_loss, weighted_f1, accuracy
 
-def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, epochs, device, history=None, checkpoint_dir=None, start_epoch=0, config=None):
+def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, epochs, device, 
+                history=None, checkpoint_dir=None, start_epoch=0, config=None, is_physics=False):
+    
     if checkpoint_dir is None:
         checkpoint_dir = Path.cwd()
     if history is None:
         history = {}
     
-    # Initialize history keys if not present
-    if 'train_loss' not in history:
-        history['train_loss'] = []
-    if 'train_f1' not in history:
-        history['train_f1'] = []
-    if 'train_acc' not in history:
-        history['train_acc'] = []
-    if 'val_loss' not in history:
-        history['val_loss'] = []
-    if 'val_f1' not in history:
-        history['val_f1'] = []
-    if 'val_acc' not in history:
-        history['val_acc'] = []
-    if 'lr' not in history:
-        history['lr'] = []
-    if 'best_val_f1' not in history:
-        history['best_val_f1'] = 0.0
-    if 'best_val_loss' not in history:
-        history['best_val_loss'] = float('inf')
-    if 'patience_counter' not in history:
-        history['patience_counter'] = 0
+    # Initialize history keys
+    keys = ['train_loss', 'train_f1', 'train_acc', 'val_loss', 'val_f1', 'val_acc', 'lr', 'physics_loss']
+    for k in keys:
+        if k not in history: history[k] = []
+    if 'best_val_f1' not in history: history['best_val_f1'] = 0.0
+    if 'best_val_loss' not in history: history['best_val_loss'] = float('inf')
+    if 'patience_counter' not in history: history['patience_counter'] = 0
     
     scaler = GradScaler()
     best_val_f1 = history['best_val_f1']
-    device_type = str(device).split(':')[0]  # Extract 'cuda' or 'cpu'
+    device_type = str(device).split(':')[0]
+    
+    # Physics Loss Hyperparams
+    physics_lambda = config.get('model_hp', {}).get('physics_lambda', 0.1) if config else 0.1
     
     for epoch in range(start_epoch, epochs):
         model.train()
         running_loss = 0.0
-        train_preds = []
-        train_labels = []
-        train_correct = 0
-        train_total = 0
+        running_phys = 0.0
+        train_preds, train_labels = [], []
+        train_correct, train_total = 0, 0
         
-        loop = tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}")
+        desc = f"Epoch {epoch+1}/{epochs} {'(Physics-Constrained)' if is_physics else ''}"
+        loop = tqdm(train_loader, desc=desc)
         
-        for X, y in loop:
+        for batch in loop:
+            if is_physics:
+                X, target_mask, y = batch
+                target_mask = target_mask.to(device)
+            else:
+                X, y = batch
+                
             X, y = X.to(device), y.to(device)
             optimizer.zero_grad()
             
             with torch.amp.autocast(device_type=device_type):
-                outputs = model(X)
-                loss = loss_fn(outputs, y)
+                if is_physics:
+                    outputs, attn_map = model(X, return_attention=True)
+                    class_loss = loss_fn(outputs, y)
+                    
+                    # Compute Physics Loss (Alignment between Attention and Pseudo-mask)
+                    # Resize target mask to match attention map size (usually 7x7)
+                    attn_size = attn_map.shape[-1]
+                    target_mask_low = F.interpolate(target_mask, size=(attn_size, attn_size), mode='bilinear', align_corners=False)
+                    
+                    phys_loss = F.mse_loss(attn_map, target_mask_low)
+                    loss = class_loss + (physics_lambda * phys_loss)
+                    running_phys += phys_loss.item()
+                else:
+                    outputs = model(X)
+                    loss = loss_fn(outputs, y)
             
             scaler.scale(loss).backward()
             scaler.unscale_(optimizer)
@@ -100,65 +116,54 @@ def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, 
             train_total += y.size(0)
             
             current_f1 = f1_score(train_labels, train_preds, average='weighted', zero_division=0)
-            current_acc = train_correct / train_total
-            loop.set_postfix(loss=loss.item(), f1=current_f1, acc=current_acc)
+            loop.set_postfix(loss=loss.item(), f1=current_f1)
 
-        # Evaluation
+        # Epoch Summaries
         epoch_loss = running_loss / len(train_loader)
+        epoch_phys = running_phys / len(train_loader) if is_physics else 0.0
         epoch_train_f1 = f1_score(train_labels, train_preds, average='weighted', zero_division=0)
         epoch_train_acc = train_correct / train_total
-        val_loss, epoch_val_f1, epoch_val_acc = evaluate(model, val_loader, loss_fn, device)
+        val_loss, epoch_val_f1, epoch_val_acc = evaluate(model, val_loader, loss_fn, device, is_physics=is_physics)
         
-        # Scheduler step (handle both types of steps we r using)
-        if isinstance(scheduler, CosineAnnealingLR):
-            scheduler.step()
-        else:
-            scheduler.step(val_loss)
+        if isinstance(scheduler, CosineAnnealingLR): scheduler.step()
+        else: scheduler.step(val_loss)
         
         history['train_loss'].append(epoch_loss)
+        history['physics_loss'].append(epoch_phys)
         history['train_f1'].append(epoch_train_f1)
         history['train_acc'].append(epoch_train_acc)
         history['val_loss'].append(val_loss)
         history['val_f1'].append(epoch_val_f1)
         history['val_acc'].append(epoch_val_acc)
-        history['lr'].append(optimizer.param_groups[0]['lr']) # Track LR changes
+        history['lr'].append(optimizer.param_groups[0]['lr'])
         
-        print(f"\nSummary -> Loss: {epoch_loss:.4f} | Train F1: {epoch_train_f1:.4f} | Train Acc: {epoch_train_acc:.4f} | Val F1: {epoch_val_f1:.4f} | Val Acc: {epoch_val_acc:.4f} | Val loss: {val_loss:.4f}| LR: {optimizer.param_groups[0]['lr']}")
+        print(f"\nSummary -> Total Loss: {epoch_loss:.4f} | Physics: {epoch_phys:.4f} | Val F1: {epoch_val_f1:.4f} | Val Acc: {epoch_val_acc:.4f} | LR: {optimizer.param_groups[0]['lr']}")
 
+        # Save Best Model Logic
         if epoch_val_f1 > best_val_f1:
             best_val_f1 = epoch_val_f1
             history['best_val_f1'] = best_val_f1
             best_model_name = config.get('experiment', {}).get('best_model_name', 'best_model.pth') if config else 'best_model.pth'
-            best_model_path = checkpoint_dir / best_model_name
-            torch.save(model.state_dict(), str(best_model_path))
+            torch.save(model.state_dict(), str(checkpoint_dir / best_model_name))
             print("New Best Model Saved!")
 
+        # Checkpoint Logic
         if (epoch + 1) % 5 == 0:
-            checkpoint = {
-                'epoch': epoch + 1,
-                'model_state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'history': history,
-                'best_f1': best_val_f1
-            }
-            checkpoint_path = checkpoint_dir / f"checkpoint_epoch_{epoch+1}.pth"
-            torch.save(checkpoint, str(checkpoint_path))
-            # latest checkpoint for later  resuming of the training
-            latest_checkpoint_path = checkpoint_dir / "latest_checkpoint.pkl"
-            torch.save(checkpoint, latest_checkpoint_path)
+            checkpoint = {'epoch': epoch+1, 'model_state_dict': model.state_dict(), 
+                          'optimizer_state_dict': optimizer.state_dict(), 'history': history, 'best_f1': best_val_f1}
+            torch.save(checkpoint, str(checkpoint_dir / f"checkpoint_epoch_{epoch+1}.pth"))
+            torch.save(checkpoint, str(checkpoint_dir / "latest_checkpoint.pkl"))
             
         # Early Stopping check
         best_val_loss = history['best_val_loss']
-        early_stopping_patience = config.get('model_hp', {}).get('early_stopping_patience', 15)
-        
+        patience = config.get('model_hp', {}).get('early_stopping_patience', 15)
         if val_loss < best_val_loss:
             history['best_val_loss'] = val_loss
             history['patience_counter'] = 0
-            # Note: best model is saved based on F1, but we track loss for early stopping
         else:
             history['patience_counter'] += 1
-            if history['patience_counter'] >= early_stopping_patience:
-                print(f"\nEarly stopping triggered! No improvement in validation loss for {early_stopping_patience} epochs.")
+            if history['patience_counter'] >= patience:
+                print(f"Early stopping triggered at epoch {epoch+1}")
                 break
         
     return history, model

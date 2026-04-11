@@ -14,13 +14,13 @@ class PhotonicResNet18(nn.Module):
                                      kernel_size=old_conv1.kernel_size, stride=old_conv1.stride, 
                                      padding=old_conv1.padding, bias=False)
         
-        # Smart initialization: average pretrained RGB weights into grayscale filter(s)
+        # Smart initialization
         with torch.no_grad():
             pretrained_weight = old_conv1.weight  
             avg_weight = pretrained_weight.mean(dim=1, keepdim=True)  
             self.model.conv1.weight.copy_(avg_weight.repeat(1, input_channels, 1, 1))
         
-        # Adaptation for output classes
+        # FC stack
         old_fc = self.model.fc
         self.model.fc = nn.Sequential(
             nn.Dropout(p=dropout_prob),
@@ -35,7 +35,7 @@ class PhotonicResNet18(nn.Module):
         if not return_attention:
             return self.model(x)
         
-        # Manually perform forward pass to get features for attention
+        # Forward pass to layer4
         x = self.model.conv1(x)
         x = self.model.bn1(x)
         x = self.model.relu(x)
@@ -50,11 +50,13 @@ class PhotonicResNet18(nn.Module):
         
         x = self.model.avgpool(x)
         x = torch.flatten(x, 1)
-        # ResNet18 fc is our Sequential block
         logits = self.model.fc(x)
         
-        # Calculate Attention Map: Mean over channels 
+        # SHARP ATTENTION:
+        # Instead of just mean, we use mean + quadratic scaling to sharpen the peaks
         attention_map = torch.mean(feature_map, dim=1, keepdim=True) 
+        attention_map = torch.clamp(attention_map, min=0) # ReLU
+        attention_map = attention_map.pow(2) # Sharpens high-activation areas 
         
         # Min-Max Normalization per batch sample
         B, C, H, W = attention_map.shape

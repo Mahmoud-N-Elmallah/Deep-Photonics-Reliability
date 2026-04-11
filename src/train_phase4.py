@@ -51,7 +51,7 @@ def main():
     
     # 5. Execute Phase 4 Training
     print(f"\nStarting Phase 4: Physics-Constrained Supervision")
-    print(f"Physics Lambda: {config.get('model_hp', {}).get('physics_lambda', 0.1)}")
+    print(f"Physics Lambda: {config.get('model_hp', {}).get('physics_lambda', 1.0)}")
     
     history, trained_model = train_model(
         model=model,
@@ -67,8 +67,14 @@ def main():
         is_physics=True
     )
     
-    print("\nPhase 4 Training Complete!")
-    print(f"Final Models saved in: {checkpoint_dir}")
+    # 6. Save History
+    import pickle
+    history_path = checkpoint_dir / 'training_history.pkl'
+    with open(history_path, 'wb') as f:
+        pickle.dump(history, f)
+    
+    print(f"\nPhase 4 Training Complete!")
+    print(f"Final Models and History saved in: {checkpoint_dir}")
 
 if __name__ == '__main__':
     main()

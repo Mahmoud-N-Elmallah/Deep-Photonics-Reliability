@@ -388,9 +388,16 @@ python main.py --phase eval  # Only run final evaluation on test set
 
 ---
 
-Mahmoud Nabil El-Mallah  
-ITI Data Science & AI Diploma | Ain Shams University Physics (1st in cohort)  
-[LinkedIn](https://www.linkedin.com/in/mahmoudnelmallah/)  
- 
+## Final Note on Performance
 
-*
+It is important to state clearly that the final F1-score reported in this project is **not the best performance available in the literature** on ELPV. That is acknowledged openly.
+
+However, the main purpose of this work is **not** to chase the highest benchmark number. The real contribution of this project is the **methodology**: a physics-aware, curriculum-based pipeline that combines frequency-domain preprocessing, multi-domain feature fusion, Grad-CAM-based weak supervision, and spatially constrained optimization.
+
+Even without claiming state-of-the-art performance, the project still demonstrates that this methodology is effective. It improves interpretability, encourages physically meaningful attention, and shows that domain knowledge can be injected into computer vision systems in a practical and measurable way. In that sense, the value of the project lies less in being the best score out there and more in proving that a physics constrained learning can work reliably nonetheless.
+
+---
+
+Mahmoud Nabil El-Mallah  
+ITI Data Science Diploma | Ain Shams University Physics (1st in cohort)  
+[LinkedIn](https://www.linkedin.com/in/mahmoudnelmallah/)  

@@ -13,6 +13,23 @@ checkpoints/
 *.onnx
 *.pb
 data\phase_comparison
+README.md
+
+# ALLOW README ASSETS
+!scratch/training_plot.png
+!results/final_evaluation/confusion_matrix.png
+!results/final_evaluation/blind_test_0.jpg
+!data/phase_comparison/cell0010_comparison.jpg
+!data/phase_comparison/cell0517_comparison.jpg
+!data/pseudo_masks/visuals/train/cell0013_cam.jpg
+!data/pseudo_masks/visuals/train/cell0031_cam.jpg
+!data/pseudo_masks/visuals/train/cell0112_cam.jpg
+!data/pseudo_masks/visuals/train/cell0115_cam.jpg
+!data/pseudo_masks/visuals/train/cell0171_cam.jpg
+!data/pseudo_masks/visuals/train/cell0242_cam.jpg
+!data/pseudo_masks/visuals/train/cell0375_cam.jpg
+!data/pseudo_masks/visuals/train/cell0438_cam.jpg
+!data/pseudo_masks/visuals/train/cell0508_cam.jpg
 
 # Ignore Python cache
 __pycache__/

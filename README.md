@@ -180,7 +180,7 @@ Recent literature on ELPV reports F1-scores ranging from **0.83 to 0.97** using 
 - Advanced methods (GANs, semi-supervised learning): ~0.91–0.97
 - Our approach (Phase 4 Physics-Constrained): **0.77–0.82**
 
-**Interpretation**: Our result is competitive but not state-of-the-art on ELPV alone. The *value* lies not in the absolute metric, but in the **methodology**—we prioritize interpretability and physics-grounding over pure benchmark optimization. The curriculum approach and spatial constraint mechanism are transferable to other optical imaging domains (defect detection, medical imaging, etc.) where interpretability matters more than marginal accuracy gains.
+- results are competitive but not state-of-the-art on ELPV alone. The value lies not in the absolute metric, but in the methodology where prioritize interpretability and physics grounding over pure benchmark optimization. The approach and spatial constraint mechanism are transferable to other optical imaging domains (defect detection, medical imaging, etc.) where interpretability matters more than marginal accuracy gains.
 
 ---
 
@@ -285,35 +285,31 @@ The power of this pipeline lies in explicitly grounding deep learning decisions 
 
 ## 9. Repository Structure & Reproducibility
 
-```
-deep-photonics-reliability/
-│
-├── main.py                        # Single-entry orchestrator (Phases 1–4)
-├── README.md                      # This documentation
-├── LICENSE                        # MIT License
-│
-├── data/
-│   ├── images/                    # Raw ELPV images (input)
-│   ├── train_data.csv             # Labels: image_id, defect_probability
-│   ├── pseudo_masks/
-│   │   ├── masks/                 # Binary masks from Phase 3 (numpy arrays)
-│   │   └── visuals/               # Grad-CAM overlays for audit
-│   └── phase_comparison/          # Side-by-side P3 vs. P4 results
-│
+```text
+├── main.py                     # Unified Pipeline Orchestrator (Single-entry point)
+├── README.md                   # Textbook-style Documentation
+├── .gitignore                  # Git Ignore rules (Selectively un-ignores visuals)
+├── data/ (not tracked due to size)
+│   ├── images/                 # Raw EL images (Input Directory)
+│   ├── pseudo_masks/           # Generated during Phase 3
+│   │   ├── masks/              # Binary numpy/image masks for Phase 4 training
+│   │   └── visuals/            # Annotated Grad-CAM overlays for auditing
+│   ├── phase_comparison/       # Side-by-side progression analysis (P3 vs P4)
+│   ├── train_data.csv          # Catalog (Probability labels: 0.0, 0.33, 0.67, 1.0)
+│   └── pseudo_masks_mapping.csv # Catalog mapping images to Phase 3 masks
 ├── src/
-│   ├── model.py                   # PhotonicResNet18 architecture
-│   ├── physics_utils.py           # FFT, notch filtering, CLAHE
-│   ├── grad_cam.py                # Grad-CAM extraction & mask generation
-│   ├── train_phase4.py            # Physics-constrained training loop
-│   ├── training_engine.py         # Multi-objective loss, optimization
-│   ├── evaluate_test_set.py       # Evaluation metrics, reporting
-│   ├── calc_stats.py              # Dataset normalization
-│   ├── config.yaml                # Hyperparameters
-│   └── utils.py                   # Helpers (loss functions, schedulers)
-│
-├── checkpoints/                   # Saved model weights (not tracked)
+│   ├── calc_stats.py           # Dataset normalization calculator
+│   ├── config.yaml             # Centralized hyperparameter configuration
+│   ├── evaluate_test_set.py    # Final evaluation & reporting script
+│   ├── grad_cam.py             # Feature visualization & mask extraction
+│   ├── model.py                # PhotonicResNet18 Architecture (with Attention)
+│   ├── physics_utils.py        # FFT & Signal processing utilities
+│   ├── train_phase4.py         # Physics-constrained training entry
+│   ├── training_engine.py      # Core trainer with Multi-objective Loss
+│   └── utils.py                # Shared helpers (Loss, Optim, Schedulers)
+├── checkpoints/ (not tracked due to size)
 └── results/
-    └── final_evaluation/          # Test metrics, confusion matrices, curves
+    └── final_evaluation/       # Test reports, Confusion matrices, & Curves
 ```
 
 ### Reproducibility

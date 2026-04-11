@@ -62,10 +62,43 @@ Deep Photonics Reliability is a state-of-the-art deep learning pipeline document
 
 ## Project Architecture
 ```text
-├── results/final_evaluation/   # Confusion matrix, Training curves, Blind tests
-├── data/phase_comparison/      # Comparative analysis images (P3 vs P4)
-├── src/                        # Core implementation (Model, Engine, Pipeline)
-└── config.yaml                 # Formalized hyperparameters (λ=0.25, LR=5e-5)
+├── main.py                     # Unified Pipeline Orchestrator (Single-entry point)
+├── README.md                   # Project Documentation
+├── .gitignore                  # Git Ignore rules (Selectively un-ignores visuals)
+├── data/ (the original dataset is not tracked due to size)
+│   ├── images/                 # Raw EL images (Input Directory)
+│   ├── pseudo_masks/           # Generated during Phase 3
+│   │   ├── masks/              # Binary numpy/image masks for Phase 4 training
+│   │   └── visuals/            # Annotated Grad-CAM overlays for auditing
+│   │       ├── train/          # Training set visuals
+│   │       └── val/            # Validation set visuals
+│   ├── phase_comparison/       # Side-by-side progression analysis (P3 vs P4)
+│   ├── train_data.csv          # Training split catalog
+│   ├── val_data.csv            # Validation split catalog
+│   ├── test_data.csv           # Final unseen test catalog
+│   └── pseudo_masks_mapping.csv # Catalog mapping images to Phase 3 masks
+├── src/
+│   ├── calc_stats.py           # Dataset normalization calculator
+│   ├── config.yaml             # Centralized hyperparameter configuration
+│   ├── data_pipeline.py        # Tri-channel loading & augmentation engine
+│   ├── dataset.py              # Custom PyTorch Datasets (Standard & Physics)
+│   ├── evaluate_test_set.py    # Final evaluation & reporting script
+│   ├── grad_cam.py             # Feature visualization & mask extraction
+│   ├── model.py                # PhotonicResNet18 Architecture (with Attention)
+│   ├── physics_utils.py        # FFT & Signal processing utilities
+│   ├── prepare_masks_csv.py    # Catalog generation for Phase 4
+│   ├── train.py                # Baseline training entry (Phase 1-2)
+│   ├── train_phase4.py         # Physics-constrained training entry
+│   ├── training_engine.py      # Core trainer with Multi-objective Loss
+│   ├── utils.py                # Shared helpers (Loss, Optim, Schedulers)
+│   ├── image_processing.ipynb  # Interactive signal processing lab
+│   └── data_preparation.ipynb  # Interactive data preparation lab
+├── checkpoints/ (not tracked due to size)
+│   ├── tri_channel/            # Best baseline model weights
+│   └── phase4_physics/         # Physics-constrained model weights & history
+├── results/
+│   └── final_evaluation/       # Test reports, Confusion matrices, & Curves
+└── scratch/                    # Temporary logs and baseline plots
 ```
 
 ---

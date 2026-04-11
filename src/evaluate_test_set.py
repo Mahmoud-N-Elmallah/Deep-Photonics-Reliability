@@ -7,10 +7,37 @@ import seaborn as sns
 from pathlib import Path
 from sklearn.metrics import classification_report, confusion_matrix, f1_score
 
+import pickle
 from utils import load_config, setup_device
 from data_pipeline import build_loaders
 from model import PhotonicResNet18
 from grad_cam import GradCAM, denormalize
+
+def plot_training_curves(history_path, save_path):
+    if not history_path.exists():
+        return
+    with open(history_path, 'rb') as f:
+        history = pickle.load(f)
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+    color = 'tab:red'
+    ax1.set_xlabel('Epoch')
+    ax1.set_ylabel('Loss', color=color)
+    ax1.plot(history['train_loss'], color=color, label='Total Loss', linewidth=2)
+    if 'physics_loss' in history:
+        ax1.plot(history['physics_loss'], color='tab:orange', linestyle='--', label='Physics Loss')
+    ax1.tick_params(axis='y', labelcolor=color)
+    ax2 = ax1.twinx()
+    color = 'tab:blue'
+    ax2.set_ylabel('Val F1', color=color)
+    ax2.plot(history['val_f1'], color=color, label='Val F1 Score', linewidth=2)
+    ax2.tick_params(axis='y', labelcolor=color)
+    plt.title('Phase 4: Optimization Dynamics')
+    lines, labels = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines + lines2, labels + labels2, loc='center right')
+    fig.tight_layout()
+    plt.savefig(save_path, dpi=300)
+    plt.close()
 
 def run_final_evaluation():
     # 1. Setup
@@ -116,6 +143,12 @@ def run_final_evaluation():
         plt.close()
 
     print(f"Blind Test Visuals saved to {results_dir}")
+    
+    # 8. Training Metrics Visualization
+    print("Generating training optimization curves...")
+    history_path = project_root / 'checkpoints' / 'phase4_physics' / 'training_history.pkl'
+    plot_training_curves(history_path, results_dir / 'phase4_training_curves.png')
+    
     print("\nEvaluation Complete!")
 
 if __name__ == '__main__':

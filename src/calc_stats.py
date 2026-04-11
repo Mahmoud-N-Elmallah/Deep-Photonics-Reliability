@@ -4,18 +4,19 @@ import torch
 from torchvision import transforms
 from pathlib import Path
 
-# Add src folder to path
-sys.path.append(str(Path('c:/Projects/PV Cells Fault CV/Deep-Photonics-Reliability/src')))
+# Dynamic Path Resolution
+script_dir = Path(__file__).parent
+project_root = script_dir.parent
+sys.path.append(str(script_dir))
 
 from dataset import DatasetMaker, FftTransform
 
-config_path = 'c:/Projects/PV Cells Fault CV/Deep-Photonics-Reliability/src/config.yaml'
+config_path = script_dir / 'config.yaml'
 with open(config_path, 'r') as f:
     config = yaml.safe_load(f)
 
 print("Loading Dataset with tri_channel mode...")
 
-# Applying the same logic the user used in the notebook
 temp_train_ds = DatasetMaker(
     config['data_path']['train'],
     transforms=transforms.Compose([
@@ -29,15 +30,14 @@ temp_train_ds = DatasetMaker(
         ),
         transforms.ToTensor()
     ]), 
-    project_root=Path('c:/Projects/PV Cells Fault CV/Deep-Photonics-Reliability')
+    project_root=project_root
 )
 
-print("Stacking dataset...")
-# Using the list comprehension the user used
+print(f"Stacking dataset ({len(temp_train_ds)} images)...")
 all_images = [temp_train_ds[i][0] for i in range(len(temp_train_ds))]
 a = torch.stack(all_images, dim=0)
 
-print(f"Stacked tensor shape: {a.shape}") # Should be [N, 3, H, W]
+print(f"Stacked tensor shape: {a.shape}") # [N, 3, H, W]
 
 train_original_mean = a[:, 0, :, :].mean().item()
 train_original_std = a[:, 0, :, :].std().item()

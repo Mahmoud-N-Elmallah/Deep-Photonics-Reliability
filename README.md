@@ -320,7 +320,7 @@ The power of this pipeline lies in explicitly grounding deep learning decisions 
 
 ### Running the Pipeline
 ```bash
- Run the COMPLETE pipeline from start to finish
+Run the COMPLETE pipeline from start to finish
 # (Includes data stats, Phase 1-2, Phase 3 masks, Phase 4 tuning, and Evaluation)
 python main.py
 # Optional: Run specific phases through the orchestrator
@@ -329,6 +329,40 @@ python main.py --phase 3     # Only generate explainability masks
 python main.py --phase 4     # Only run physics-constrained tuning
 python main.py --phase eval  # Only run final evaluation on test set
 ```
+
+### Additional Root Files Present in the Project
+- `pyproject.toml`, `uv.lock`, and `.python-version` define the local Python **3.13** environment and `uv`-managed dependencies for the project.
+- The dependency set currently includes PyTorch/TorchVision/Torchaudio, NumPy, pandas, OpenCV, SciPy, scikit-learn, seaborn, matplotlib, PyYAML, `tqdm`, and `imblearn`.
+- `LICENSE` is included at the repository root, and the `uv` package index is configured for CUDA 12.4 PyTorch wheels.
+
+### Additional `src/` Files Not Shown in the Tree Above
+- `src/train.py`: Phase 1-2 baseline training entry point with resume support from `checkpoints/tri_channel/latest_checkpoint.pkl`.
+- `src/data_pipeline.py`: Central DataLoader/augmentation builder for `tri_channel`, `dual_channel`, `original_only`, and `fft_only` experiment modes, plus the joint image-mask transform used in Phase 4.
+- `src/dataset.py`: Defines `FftTransform`, `DatasetMaker`, `PhysicsDataset`, and synchronized augmentation logic for physics-aware training.
+- `src/prepare_masks_csv.py`: Builds `data/pseudo_masks_mapping.csv` after Grad-CAM mask generation; this is the orchestrator's explicit Step `3.5`.
+- `src/compare_phases_visuals.py`: Produces side-by-side CAM comparison boards between the baseline model and the Phase 4 physics-aware model.
+- `src/data_preparation.ipynb`: Notebook used to parse the raw labels file and create the train/validation/test CSV splits.
+- `src/image_processing.ipynb`: Exploratory notebook for FFT/grid filtering and defect-enhancement experiments.
+
+### Additional Data and Artifact Files Present in This Workspace
+- The current workspace contains the full `data/images/` directory with **2,624** EL PNG images, in addition to the manifests listed above.
+- `data/labels.csv` is the raw label listing, while `data/fixed_labels.csv` is the cleaned parsed manifest with `path`, defect probability, and cell-type columns.
+- `data/train_data.csv`, `data/val_data.csv`, and `data/test_data.csv` are the generated supervised splits with integer class labels (`2099 / 262 / 263` samples respectively).
+- `data/pseudo_masks_mapping.csv` currently contains **2,361** image-to-mask mappings generated from the training and validation splits.
+- `data/pseudo_masks/masks/` currently contains **2,099** training masks and **262** validation masks.
+- `data/pseudo_masks/visuals/` currently contains **413** training Grad-CAM audit boards and **14** validation audit boards.
+- `data/phase_comparison/` currently contains **7** Phase 3 vs. Phase 4 comparison figures.
+
+### Checkpoints and Scratch Utilities Also Included
+- `checkpoints/tri_channel/` contains `best_model.pth`, periodic `checkpoint_epoch_*.pth` snapshots, `latest_checkpoint.pkl`, and `training_history.pkl`.
+- `checkpoints/phase4_physics/` contains the Phase 4 `best_model.pth` and its `training_history.pkl`.
+- `scratch/plot_results.py`, `scratch/monitor_training.py`, and `scratch/detailed_analysis.py` are helper scripts for plotting, monitoring, and dumping checkpoint history for quick local inspection.
+- `scratch/training_plot.png` is a saved training-curve figure used in this README.
+- `results/final_evaluation/` currently contains `classification_report.txt`, `confusion_matrix.png`, `phase4_training_curves.png`, and **12** `blind_test_*.jpg` overlays.
+
+### Extra Pipeline Notes
+- In `python main.py --phase all`, the orchestrator runs Step `0` (`src/calc_stats.py`) and Step `3.5` (`src/prepare_masks_csv.py`) in addition to Phases 1-4 and final evaluation.
+- `main.py` also exposes a `--config` argument and checks for the presence of `data/images/` before starting.
 
 ---
 

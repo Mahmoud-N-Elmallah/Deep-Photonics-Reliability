@@ -10,7 +10,7 @@ from model import PhotonicResNet18
 from training_engine import train_model
 
 def main():
-    # 1. Setup
+    
     script_dir = Path(__file__).parent
     project_root = script_dir.parent
     config = load_config(str(script_dir / 'config.yaml'))
@@ -20,13 +20,13 @@ def main():
     checkpoint_dir = project_root / 'checkpoints' / 'phase4_physics'
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
     
-    # 2. Build Physics-Aware Loaders
+    
     print("Building Physics-Aware DataLoaders...")
     train_loader, val_loader, test_loader, input_channels = build_loaders(
         config, project_root, experiment_type, is_physics=True
     )
     
-    # 3. Initialize Model and Load Weights from Phase 3
+    # Initialize Model and Load Weights from Phase 3
     num_classes = len(config.get('train_class_count', {0: 1, 1: 1, 2: 1, 3: 1}))
     model = PhotonicResNet18(
         input_channels=input_channels, 
@@ -42,14 +42,13 @@ def main():
     else:
         print("WARNING: Phase 3 checkpoint not found. Starting from scratch/ImageNet.")
 
-    # 4. Training Components
+    
     optimizer = get_optimizer(model, config)
     loss_fn = get_loss_function(config, device)
     scheduler = get_scheduler(optimizer, config)
     
-    epochs = config.get('model_hp', {}).get('physics_epochs', 30) # Typically fewer epochs for fine-tuning
-    
-    # 5. Execute Phase 4 Training
+    epochs = config.get('model_hp', {}).get('physics_epochs', 30) 
+    # Phase 4 Training
     print(f"\nStarting Phase 4: Physics-Constrained Supervision")
     print(f"Physics Lambda: {config.get('model_hp', {}).get('physics_lambda', 1.0)}")
     
@@ -67,7 +66,7 @@ def main():
         is_physics=True
     )
     
-    # 6. Save History
+    # Save History
     import pickle
     history_path = checkpoint_dir / 'training_history.pkl'
     with open(history_path, 'wb') as f:

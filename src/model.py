@@ -14,7 +14,7 @@ class PhotonicResNet18(nn.Module):
                                      kernel_size=old_conv1.kernel_size, stride=old_conv1.stride, 
                                      padding=old_conv1.padding, bias=False)
         
-        # Smart initialization
+        #  initialization
         with torch.no_grad():
             pretrained_weight = old_conv1.weight  
             avg_weight = pretrained_weight.mean(dim=1, keepdim=True)  
@@ -35,7 +35,7 @@ class PhotonicResNet18(nn.Module):
         if not return_attention:
             return self.model(x)
         
-        # Forward pass to layer4
+        
         x = self.model.conv1(x)
         x = self.model.bn1(x)
         x = self.model.relu(x)
@@ -52,8 +52,7 @@ class PhotonicResNet18(nn.Module):
         x = torch.flatten(x, 1)
         logits = self.model.fc(x)
         
-        # SHARP ATTENTION:
-        # Instead of just mean, we use mean + quadratic scaling to sharpen the peaks
+        
         attention_map = torch.mean(feature_map, dim=1, keepdim=True) 
         attention_map = torch.clamp(attention_map, min=0) # ReLU
         attention_map = attention_map.pow(2) # Sharpens high-activation areas 

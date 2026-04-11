@@ -4,7 +4,7 @@ import torch
 from torchvision import transforms
 from pathlib import Path
 
-# Dynamic Path Resolution
+
 script_dir = Path(__file__).parent
 project_root = script_dir.parent
 sys.path.append(str(script_dir))
@@ -37,7 +37,7 @@ print(f"Stacking dataset ({len(temp_train_ds)} images)...")
 all_images = [temp_train_ds[i][0] for i in range(len(temp_train_ds))]
 a = torch.stack(all_images, dim=0)
 
-print(f"Stacked tensor shape: {a.shape}") # [N, 3, H, W]
+print(f"Stacked tensor shape: {a.shape}") 
 
 train_original_mean = a[:, 0, :, :].mean().item()
 train_original_std = a[:, 0, :, :].std().item()
@@ -52,7 +52,6 @@ print(f"Original -> Mean: {train_original_mean:.4f}, Std: {train_original_std:.4
 print(f"FFT      -> Mean: {train_fft_mean:.4f}, Std: {train_fft_std:.4f}")
 print(f"Enhanced -> Mean: {train_enhanced_mean:.4f}, Std: {train_enhanced_std:.4f}")
 
-# Re-dump to config
 config['stats']['train_original_mean'] = round(train_original_mean, 4)
 config['stats']['train_original_std'] = round(train_original_std, 4)
 

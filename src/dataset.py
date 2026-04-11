@@ -96,16 +96,16 @@ class PhysicsDataset(Dataset):
         mask = Image.open(self.project_root / 'data' / row['mask_rel_path']).convert('L')
         label = row['label']
         
-        # QUALITY FILTER: Check if mask is physically plausible
-        # (Cracks shouldn't cover 35% of the total cell area)
+        # QUALITY FILTER
+        # Cracks shouldn't cover 35% of the total cell area
         mask_np = np.array(mask)
-        coverage = np.mean(mask_np > 127) # Area ratio
+        coverage = np.mean(mask_np > 127) 
         
-        # is_valid_mask: 0 if noisy, 1 if good quality
-        # We handle this in the loss function to dynamically zero-out the physics loss
+        # is_valid_mask: 0 noisy, 1  good quality
+        # handle this in the loss function to  zero the physics loss
         is_valid = 1.0
         if coverage > self.coverage_threshold or coverage < 0.001:
-            is_valid = 0.0 # Mark as unreliable teacher
+            is_valid = 0.0 # Mark as unreliable
         
         if self.transform:
             if hasattr(self.transform, 'is_joint'): img, mask = self.transform(img, mask)

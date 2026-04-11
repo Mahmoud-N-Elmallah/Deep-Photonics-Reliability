@@ -11,7 +11,7 @@ def build_loaders(config: Dict, project_root: Path = None, experiment_type: str 
     if experiment_type is None:
         experiment_type = config.get('experiment', {}).get('name', 'dual_channel')
     
-    # Map experiment details
+    # experiment details
     if experiment_type == "tri_channel":
         fft_mode, input_channels = "tri_channel", 3
         norm_mean = [config['stats']['train_original_mean'], config['stats']['train_fft_mean'], config['stats']['train_enhanced_mean']]
@@ -35,7 +35,7 @@ def build_loaders(config: Dict, project_root: Path = None, experiment_type: str 
         project_root = Path.cwd()
 
     if is_physics:
-        # Phase 4: Use PhysicsDataset with JointTransform
+        # Use PhysicsDataset with JointTransform
         mask_mapping_csv = 'data/pseudo_masks_mapping.csv'
         train_transform = JointTransform(config, norm_mean, norm_std, fft_mode, is_train=True)
         val_transform = JointTransform(config, norm_mean, norm_std, fft_mode, is_train=False)
@@ -44,7 +44,7 @@ def build_loaders(config: Dict, project_root: Path = None, experiment_type: str 
         val_ds = PhysicsDataset(config['data_path']['val'], mask_mapping_csv, val_transform, project_root)
         test_ds = PhysicsDataset(config['data_path']['test'], mask_mapping_csv, val_transform, project_root)
     else:
-        # Phase 3 and below: Standard DatasetMaker
+        # Standard DatasetMaker
         train_transform = transforms.Compose([
             v2.Resize((config['augmentations']['resize'], config['augmentations']['resize'])),
             v2.RandomHorizontalFlip(p=config['augmentations']['horizontal_flip_prob']),

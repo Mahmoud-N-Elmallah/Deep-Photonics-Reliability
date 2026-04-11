@@ -87,16 +87,15 @@ def train_model(model, train_loader, val_loader, optimizer, loss_fn, scheduler, 
                     class_loss = loss_fn(outputs, y)
             
             if is_physics:
-                # 1. Physics Loss Alignment
+                
                 attn_map_f32 = attn_map.float()
                 target_mask_f32 = F.interpolate(target_mask.float(), size=attn_map.shape[-1], mode='bilinear')
                 p_loss_raw = dice_loss(attn_map_f32, target_mask_f32)
                 
-                # 2. DYNAMIC WEIGHTING: Confidence + Mask Quality
+                y
                 probs = F.softmax(outputs, dim=1)
                 confidences = probs.gather(1, y.view(-1, 1)).squeeze()
                 
-                # Only punish focus if (Prediction is Confident) AND (Teacher Mask is Clear)
                 combined_weight = confidences.detach() * is_valid_mask.float()
                 batch_p_loss = (p_loss_raw * combined_weight).mean()
                 

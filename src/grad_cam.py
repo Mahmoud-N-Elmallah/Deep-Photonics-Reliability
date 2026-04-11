@@ -39,7 +39,7 @@ class GradCAM:
             
         self.model.zero_grad()
         
-        # We target a specific index
+        
         target = output[0, target_class]
         target.backward(retain_graph=True)
         
@@ -54,28 +54,27 @@ class GradCAM:
         for i, w in enumerate(weights):
             cam += w * activations[i]
             
-        # Apply ReLU to CAM (we only care about positive influences for the target class)
+        # Apply ReLU to CAM cuz we only care about positive influences for the target class
         cam = np.maximum(cam, 0)
         cam = cv2.resize(cam, (input_tensor.shape[3], input_tensor.shape[2]))
         
-        # Apply prescribed Min-Max Normalization
+        # Apply  Min-Max Normalization
         cam_min, cam_max = cam.min(), cam.max()
         cam = (cam - cam_min) / (cam_max + 1e-8)
         
         return cam, target_class, output[0].detach()
 
 def create_pseudo_mask(cam, percentile=75, kernel_size=3):
-    # Calculate threshold strictly based on prescribed percentile
+    
     threshold = np.percentile(cam, percentile)
     
-    # Binary thresholding
     mask = (cam > threshold).astype(np.uint8) * 255
     
-    # Morphological cleaning
+    
     kernel = np.ones((kernel_size, kernel_size), np.uint8)
-    # Morph EX OPEN: removes noise
+    
     cleaned = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-    # Morph EX CLOSE: fills small holes inside the object
+    
     cleaned = cv2.morphologyEx(cleaned, cv2.MORPH_CLOSE, kernel)
     
     return cleaned
@@ -88,7 +87,7 @@ def denormalize(tensor, mean, std):
 def plot_and_save_visuals(raw_img, fft_img, enhanced_img, cam, mask, out_path, pred_class, title_prefix):
     fig, axes = plt.subplots(1, 5, figsize=(20, 4))
     
-    # Clip tensors to [0, 1] range to avoid display warnings if stats slightly overshoot
+    
     axes[0].imshow(np.clip(raw_img, 0, 1), cmap='gray')
     axes[0].set_title(f"{title_prefix}\\nRaw | Pred: {pred_class}")
     
@@ -119,11 +118,10 @@ def main():
     config = load_config(str(config_path))
     device = setup_device()
 
-    # Configuration for CAM and Pseudo Masks
     cam_cfg = config.get('cam_params', {})
     percentile_threshold = cam_cfg.get('percentile_threshold', 75)
     morph_kernel_size = cam_cfg.get('morph_kernel_size', 3)
-    visualize_every = cam_cfg.get('visualize_every', 20) # Only plot every 20th image to save time
+    visualize_every = cam_cfg.get('visualize_every', 20) 
     
     out_dir = Path(cam_cfg.get('output_dir', project_root / 'data' / 'pseudo_masks'))
     vis_dir = out_dir / 'visuals'
@@ -132,8 +130,7 @@ def main():
     vis_dir.mkdir(parents=True, exist_ok=True)
     mask_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1. Build DataLoaders (batch_size=1 necessary for CAM easily associating with image path)
-    # Temporarily override dataloader in config to bs=1
+    
     config['batch_size'] = 1
     config['dataloader']['num_workers'] = 0 # Safe sequential execution
     config['dataloader']['persistent_workers'] = False
@@ -141,11 +138,9 @@ def main():
 
     train_loader, val_loader, test_loader, input_channels = build_loaders(config, project_root, experiment_type)
     
-    # CRITICAL: Overwrite training transforms to be deterministic for CAM generation.
-    # This ensures masks align with original raw images instead of random augmentations.
+    
     train_loader.dataset.transform = val_loader.dataset.transform
     
-    # 2. Build and Load Model
     num_classes = len(config.get('train_class_count', {0: 1, 1: 1, 2: 1, 3: 1}))
     model = PhotonicResNet18(input_channels=input_channels, num_classes=num_classes).to(device)
     
@@ -161,11 +156,9 @@ def main():
 
     model.eval()
 
-    # Target Layer: typically the final convolution in ResNet layer4
     target_layer = model.model.layer4[-1]
     cam_extractor = GradCAM(model, target_layer)
 
-    # We need normalization stats to plot visually correct images
     norm_mean = [config['stats']['train_original_mean'], config['stats']['train_fft_mean'], config['stats']['train_enhanced_mean']]
     norm_std = [config['stats']['train_original_std'], config['stats']['train_fft_std'], config['stats']['train_enhanced_std']]
 
@@ -189,11 +182,11 @@ def main():
             probs = F.softmax(logits.unsqueeze(0), dim=1)
             confidence = probs[0, pred_class].item()
             
-            # 1. ALWAYS Generate and Save Pseudo Mask
+            
             mask = create_pseudo_mask(cam, percentile=percentile_threshold, kernel_size=morph_kernel_size)
             cv2.imwrite(str(mask_dir / split_name / f"{base_name}_mask.png"), mask)
             
-            # 2. SELECTIVELY Generate Visualization (to save time)
+            
             if idx % visualize_every == 0:
                 img_tensor_cpu = img_tensor.clone().cpu()
                 denormed_img = denormalize(img_tensor_cpu, norm_mean[:input_channels], norm_std[:input_channels]).numpy()

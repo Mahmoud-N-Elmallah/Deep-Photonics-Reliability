@@ -10,7 +10,7 @@ from model import PhotonicResNet18
 from training_engine import train_model
 
 def main():
-    # 1. Setup
+    
     script_dir = Path(__file__).parent
     project_root = script_dir.parent
     config = load_config(str(script_dir / 'config.yaml'))
@@ -23,7 +23,6 @@ def main():
     print(f"\nExperiment: {experiment_type}")
     print(f"Checkpoint directory: {checkpoint_dir}\n")
     
-    # 2. History and Checkpoint Selection
     history_path = checkpoint_dir / 'training_history.pkl'
     history = {}
     if history_path.exists():
@@ -33,7 +32,6 @@ def main():
     resume_checkpoint_path = checkpoint_dir / 'latest_checkpoint.pkl'
     start_epoch = 0
     
-    # 3. Data and Model
     train_loader, val_loader, test_loader, input_channels = build_loaders(config, project_root, experiment_type)
     num_classes = len(config.get('train_class_count', {0: 1, 1: 1, 2: 1, 3: 1}))
     model = PhotonicResNet18(
@@ -42,11 +40,8 @@ def main():
         dropout_prob=config['model_hp']['drop_out']
     ).to(device)
     
-    # Ensure fully unfrozen
     for param in model.parameters():
         param.requires_grad = True
-        
-    # 4. Training Components
     optimizer = get_optimizer(model, config)
     loss_fn = get_loss_function(config, device)
     scheduler = get_scheduler(optimizer, config)
@@ -64,7 +59,7 @@ def main():
             print("Training already complete.")
             return
 
-    # 5. Training Loop
+  
     history, model = train_model(
         model=model,
         train_loader=train_loader,
@@ -80,7 +75,7 @@ def main():
         config=config
     )
     
-    # 6. Save Final Results
+
     with open(history_path, 'wb') as f:
         pickle.dump(history, f)
     print(f"Training history saved to {history_path}")

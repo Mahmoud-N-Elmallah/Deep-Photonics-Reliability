@@ -19,11 +19,11 @@ def prepare_masks_mapping():
         
         for mask_path in masks:
             # Mask name format: cellXXXX_mask.png
-            # Original name: cellXXXX.png
+            # name: cellXXXX.png
             mask_name = mask_path.name
             original_image_name = mask_name.replace('_mask.png', '.png')
             
-            # Record relative paths for the dataset loader
+            
             mapping_results.append({
                 'image_name': original_image_name,
                 'mask_rel_path': f"pseudo_masks/masks/{split}/{mask_name}",

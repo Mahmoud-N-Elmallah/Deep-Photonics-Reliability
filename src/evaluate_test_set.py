@@ -47,7 +47,7 @@ def run_final_evaluation():
     device = setup_device()
     
     experiment_type = config.get('experiment', {}).get('name', 'tri_channel')
-    # Load the absolute best model from Phase 4
+    # Load the best model from Phase 4
     model_path = project_root / 'checkpoints' / 'phase4_physics' / 'best_model.pth'
     
     results_dir = project_root / 'results' / 'final_evaluation'
@@ -58,22 +58,21 @@ def run_final_evaluation():
         return
 
     # 2. Build Test Loader
-    # Ensure is_physics=True to handle the 4-tuple return if necessary, 
+    # Ensure is_physics=True to handle the 4-tuple 
     # but for simple evaluation we just need image and labels.
-    # We use build_loaders with is_physics=False to get the standard Image/Label pairs for simpler eval
+    
     _, _, test_loader, input_channels = build_loaders(config, project_root, experiment_type, is_physics=False)
     
-    # 3. Load Model
+    
     num_classes = 4
     model = PhotonicResNet18(
         input_channels=input_channels, 
         num_classes=num_classes,
-        dropout_prob=0.0 # No dropout during eval
+        dropout_prob=0.0 
     ).to(device)
     model.load_state_dict(torch.load(str(model_path), map_location=device))
     model.eval()
-    
-    # 4. Global Metrics Gathering
+
     print("\nRunning test set inference...")
     all_preds = []
     all_labels = []
@@ -85,13 +84,11 @@ def run_final_evaluation():
             _, preds = torch.max(outputs, 1)
             all_preds.extend(preds.cpu().numpy())
             all_labels.extend(labels.numpy())
-            
-    # 5. Statistical Analysis
+
     target_names = ['Normal', 'Minor-Defect', 'Moderate-Defect', 'Major-Defect']
     report = classification_report(all_labels, all_preds, target_names=target_names)
     cm = confusion_matrix(all_labels, all_preds)
-    
-    # Save Report
+
     with open(results_dir / 'classification_report.txt', 'w') as f:
         f.write(report)
     
@@ -100,7 +97,7 @@ def run_final_evaluation():
     print("="*30)
     print(report)
     
-    # 6. Confusion Matrix Visualization
+   
     plt.figure(figsize=(10, 8))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=target_names, yticklabels=target_names)
     plt.title('Final Confusion Matrix (Phase 4 Physics-Aware)')
@@ -109,7 +106,7 @@ def run_final_evaluation():
     plt.savefig(results_dir / 'confusion_matrix.png', dpi=300)
     print(f"Confusion Matrix saved to {results_dir / 'confusion_matrix.png'}")
     
-    # 7. Quality Check: Random Test Visuals
+    
     print("\nGenerating blind-test visualizations...")
     cam_extractor = GradCAM(model, model.model.layer4[-1])
     norm_mean = [config['stats']['train_original_mean'], config['stats']['train_fft_mean'], config['stats']['train_enhanced_mean']]
@@ -144,7 +141,7 @@ def run_final_evaluation():
 
     print(f"Blind Test Visuals saved to {results_dir}")
     
-    # 8. Training Metrics Visualization
+    #Training Metrics Visualization
     print("Generating training optimization curves...")
     history_path = project_root / 'checkpoints' / 'phase4_physics' / 'training_history.pkl'
     plot_training_curves(history_path, results_dir / 'phase4_training_curves.png')

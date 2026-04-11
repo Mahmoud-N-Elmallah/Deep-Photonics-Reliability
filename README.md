@@ -49,10 +49,12 @@ Deep Photonics Reliability is a state-of-the-art deep learning pipeline document
     *   **Phase 4 (Physics-Aware)**: Characterized by precise localization centered on the physical defect path. This is achieved through Quadratic Attention Scaling and Multi-Objective Loss Optimization.
 
 ### 5. Blind-Test Inference (Unseen Data)
-![Test Sample 0](results/final_evaluation/blind_test_0.jpg)
-![Test Sample 1](results/final_evaluation/blind_test_1.jpg)
-![Test Sample 2](results/final_evaluation/blind_test_2.jpg)
-![Test Sample 3](results/final_evaluation/blind_test_3.jpg)
+
+| Sample 0 | Sample 1 |
+| :---: | :---: |
+| ![Test Sample 0](results/final_evaluation/blind_test_0.jpg) | ![Test Sample 1](results/final_evaluation/blind_test_1.jpg) |
+| **Sample 2** | **Sample 3** |
+| ![Test Sample 2](results/final_evaluation/blind_test_2.jpg) | ![Test Sample 3](results/final_evaluation/blind_test_3.jpg) |
 
 *   **Elaboration**: These **Blind Tests** demonstrate generalization to totally novel data across various fault conditions. The consistent localization of faults (ranging from micro-cracks to PID clusters) confirms that the architecture has internalized robust physical features rather than specific training-set noise. The high-confidence activations on unseen samples indicate that the physics constraint successfully regularized the feature space.
 

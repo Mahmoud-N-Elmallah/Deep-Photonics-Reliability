@@ -63,8 +63,8 @@ The input to **PhotonicResNet18** is not a single-channel image but a synthetic 
 - **CLAHE enhancement**: Optical defects (cracks) manifest as high-gradient boundaries; edge enhancement mimics how human experts visually inspect EL images.
 
 **Model Architecture**:
-- **Backbone**: Modified ResNet18 with multi-scale feature extraction (4 residual blocks, dimension reduction via strided convolutions).
-- **Attention Mechanism**: Quadratic activation applied to the final feature maps to sharpen high-confidence regions.
+- **Backbone**: Modified ResNet18 with multi-scale feature extraction.
+- **Attention Mechanism**: Quadratic activation applied to the final feature maps to sharpen high-confidence regions since the feature maps of ResNets can be blurry.
 - **Head**: Global Average Pooling → Dropout (regularization) → Fully connected layer → Softmax classification (4 defect probability classes).
 
 **Result**: The model learns correlated signatures across spectral and spatial domains, improving robustness to local noise while maintaining global context.

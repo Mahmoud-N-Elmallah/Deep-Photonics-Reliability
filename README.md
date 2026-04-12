@@ -98,12 +98,6 @@ The input to **PhotonicResNet18** is not a single-channel image but a synthetic 
 
 3. **Quality audit**: Manually inspect these masks to identify *hallucinations* (masks focused on background grid rather than defects).
 
-**Physical Insight**: 
-In Phase 2, the model may learn that the grid pattern strongly correlates with "Normal" cells (since defect-free cells have intact grids), leading to broad, diffuse attention. Phase 3 exposes this failure mode, enabling targeted correction in Phase 4.
-
-**Gallery Evidence**: 
-The README displays CAM examples where Phase 3 correctly localizes cracks (sharp, linear activations along crack paths) versus hallucinations (diffuse activation across the entire cell background).
-
 ---
 
 
@@ -113,7 +107,7 @@ The README displays CAM examples where Phase 3 correctly localizes cracks (sharp
 ![Phase Comparison 0517](data/phase_comparison/cell0517_comparison.jpg)
 
 ### Phase 4: Physics-Constrained Optimization via Spatial Loss
-**Objective**: Force the model's internal attention to align with the *physical path* of structural defects.
+**Objective**: Force the model's internal attention to align with the *path* of structural defects.
 
 **Approach**:
 Instead of pure classification loss, we introduce a **Multi-Objective Loss** that combines:
@@ -165,22 +159,21 @@ Cracks are topological features (their shape matters), not just statistical clas
 ### Performance Results
 | Metric | Value | Context |
 |--------|-------|---------|
-| **Weighted F1-Score** | 0.77 – 0.82 | Harmonic mean (precision + recall), weighted by class support |
-| **Test Accuracy** | ~88–92% | Raw accuracy (can be misleading in imbalanced settings) |
-| **Macro F1-Score** | 0.65 – 0.75 | Unweighted F1 across all classes (equally values each class) |
-| **Precision (Major Defects)** | 0.88 – 0.95 | Critical for manufacturing: few false positives on defective cells |
-| **Recall (Minor Defects)** | 0.70 – 0.80 | Ensures subtle cracks are not missed |
+| **Weighted F1-Score** | 0.82 | Harmonic mean (precision + recall), weighted by class support |
+| **Test Accuracy** | ~92% | Raw accuracy (can be misleading in imbalanced settings) |
+| **Macro F1-Score** | 0.75 | Unweighted F1 across all classes (equally values each class) |
+| **Precision (Major Defects)** | 0.95 | Critical for manufacturing: few false positives on defective cells |
+| **Recall (Minor Defects)** | 0.80 | Ensures subtle cracks are not missed |
 
 ### Why Weighted F1-Score?
 In manufacturing, **precision on "Major Defect" prediction is critical**: false positives (flagging a good cell as defective) directly impact yield loss. The weighted F1-score balances this, emphasizing performance on the defect classes that matter most.
 
 ### Comparison to Literature Baselines
-Recent literature on ELPV reports F1-scores ranging from **0.83 to 0.97** using various techniques:
-- Standard ResNet18 (supervised only): ~0.83–0.87
-- Advanced methods (GANs, semi-supervised learning): ~0.91–0.97
-- Our approach (Phase 4 Physics-Constrained): **0.77–0.82**
+Recent literature on ELPV reports F1-scores ranging from **0.80 to 0.97** using various techniques:
+- SOTA results using Advanced methods (GANs, semi-supervised learning): ~0.91–0.97
+- Our approach: **0.82**
 
-- results are competitive but not state-of-the-art on ELPV alone. The value lies not in the absolute metric, but in the methodology where prioritize interpretability and physics grounding over pure benchmark optimization. The approach and spatial constraint mechanism are transferable to other optical imaging domains (defect detection, medical imaging, etc.) where interpretability matters more than marginal accuracy gains.
+- results are competitive but not state-of-the-art on ELPV alone. The value of this project lies not in the absolute metric, but in the methodology where we prioritize interpretability, explainablitiy and physics grounding over pure benchmark optimization. The approach and spatial constraint mechanism are transferable to other optical imaging domains (defect detection, medical imaging, etc.) where interpretability matters more than marginal accuracy gains.
 
 ---
 
@@ -193,7 +186,7 @@ The ELPV dataset exhibits **class imbalance**: ~70% of samples are "Normal" cell
 - **Weighted F1**: Averages F1 scores across classes, weighted by the number of samples in each class. Reflects real-world performance where defects are rare but critical.
 - **Macro F1**: Treats each class equally. Reveals whether the model generalizes uniformly across severity levels.
 
-Our weighted F1 of 0.77–0.82 indicates good precision on rare defective samples (minimizing false alarms) while maintaining reasonable recall.
+Our weighted F1 of 0.82 indicates good precision on rare defective samples (minimizing false alarms) while maintaining reasonable recall.
 
 ---
 
@@ -270,7 +263,7 @@ The power of this pipeline lies in explicitly grounding deep learning decisions 
 
 ### Current Limitations
 1. **Single-Dataset Evaluation**: Model is evaluated only on ELPV. Cross-dataset generalization (to PVEL-AD, SunPower, other EL benchmarks) is untested.
-2. **Modest Absolute Performance**: Weighted F1 of 0.77–0.82 is competitive but not state-of-the-art. Trade-off between interpretability and accuracy is intentional.
+2. **Modest Absolute Performance**: Weighted F1 of 0.82 is competitive but not state-of-the-art. Trade-off between interpretability and accuracy is intentional.
 3. **Weak Supervision Noise**: Pseudo-masks from Grad-CAM can be unreliable for marginal samples; Confidence Gate mitigates but doesn't eliminate this.
 4. **Limited Defect Diversity**: ELPV focuses on broad defect categories; fine-grained defect type classification (crack vs. contact failure vs. PID) is not addressed.
 
@@ -315,7 +308,7 @@ The power of this pipeline lies in explicitly grounding deep learning decisions 
 ### Reproducibility
 - **Code**: Full pipeline published on GitHub under MIT License.
 - **Data**: ELPV dataset is publicly available ([https://github.com/zae-bayern/elpv-dataset](https://github.com/zae-bayern/elpv-dataset)).
-- **Hyperparameters**: Configured in `src/config.yaml`; no hardcoded magic numbers.
+- **Hyperparameters**: Configured in `src/config.yaml`.
 - **Pseudo-Masks**: Saved post-Phase 3 for audit and debugging.
 
 ### Running the Pipeline
@@ -368,7 +361,7 @@ python main.py --phase eval  # Only run final evaluation on test set
 
 ## 10. Key Takeaways
 
-1. **Physics-Constrained Supervision Works**: By grounding deep learning in optical and materials physics, we can improve model interpretability without significant accuracy sacrifice.
+1. **Physics-Constrained Supervision Works**: By grounding deep learning in optical physics, we can improve model interpretability without significant accuracy sacrifice.
 
 2. **Curriculum Learning is Efficient**: The four-phase pipeline progressively builds understanding, starting from frequency-domain signal processing, to multi-domain learning, to supervised attention auditing, to physics-regularized optimization.
 

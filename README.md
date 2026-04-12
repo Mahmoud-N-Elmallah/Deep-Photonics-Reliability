@@ -1,6 +1,6 @@
 # Deep Photonics Reliability: Physics-Constrained Defect Detection in Electroluminescence Imagery
 
-## Executive Summary
+## Overview
 
 **Deep Photonics Reliability** is a physics-informed machine learning pipeline that addresses a fundamental problem in photovoltaic quality assurance: **how to enforce first-principles optical physics constraints into deep learning models for reliable defect detection**, even when training data is limited and noisy.
 

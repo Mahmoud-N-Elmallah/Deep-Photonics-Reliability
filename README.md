@@ -146,7 +146,7 @@ Cracks are topological features (their shape matters), not just statistical clas
 - **Class Distribution**: Imbalanced (mostly Normal cells, fewer defective samples)
 
 
-## Final Evaluation Gallery
+## Test Set Gallery
 
 | Case 0 | Case 1 | Case 2 | Case 3 |
 | :---: | :---: | :---: | :---: |

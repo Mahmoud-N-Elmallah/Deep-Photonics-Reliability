@@ -1,4 +1,4 @@
-import os
+import argparse
 import torch
 import torch.nn.functional as F
 from pathlib import Path
@@ -7,16 +7,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 
-from utils import load_config, setup_device
+from utils import add_config_argument, load_runtime_config, setup_device
 from data_pipeline import build_loaders
 from model import PhotonicResNet18
 from grad_cam import GradCAM, denormalize
 
-def compare_models():
+def compare_models(config_arg: str):
     
     script_dir = Path(__file__).parent
     project_root = script_dir.parent
-    config = load_config(str(script_dir / 'config.yaml'))
+    config, config_path = load_runtime_config(config_arg, project_root)
     device = setup_device()
     
     experiment_type = config.get('experiment', {}).get('name', 'tri_channel')
@@ -26,8 +26,9 @@ def compare_models():
     p4_path = project_root / 'checkpoints' / 'phase4_physics' / 'best_model.pth'
     
     if not p3_path.exists() or not p4_path.exists():
-        print("Error: Could not find one of the models for comparison.")
-        return
+        raise FileNotFoundError(
+            f"Comparison requires both checkpoints. Missing one of: {p3_path}, {p4_path}"
+        )
 
     
     # Force batch_size=1 and deterministic
@@ -107,7 +108,10 @@ def compare_models():
         print(f"  [OK] Compared {base_name}")
         if sample_count >= max_samples: break
 
-    print(f"\nComparison complete! Check the folder: {output_dir}")
+    print(f"\nComparison complete! Check the folder: {output_dir} | Config: {config_path}")
 
 if __name__ == "__main__":
-    compare_models()
+    parser = argparse.ArgumentParser(description="Compare Phase 3 and Phase 4 Grad-CAM outputs.")
+    add_config_argument(parser, default="src/config.yaml")
+    args = parser.parse_args()
+    compare_models(args.config)

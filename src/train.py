@@ -1,19 +1,29 @@
+import argparse
 import torch
-import torch.nn as nn
 from pathlib import Path
-import pickle
-import shutil
 
-from utils import load_config, setup_device, get_loss_function, get_optimizer, get_scheduler
+from utils import (
+    add_config_argument,
+    get_loss_function,
+    get_optimizer,
+    get_scheduler,
+    load_pickle,
+    load_runtime_config,
+    save_pickle,
+    setup_device,
+)
 from data_pipeline import build_loaders
 from model import PhotonicResNet18
 from training_engine import train_model
 
 def main():
+    parser = argparse.ArgumentParser(description="Train baseline Phase 1-2 model.")
+    add_config_argument(parser, default="src/config.yaml")
+    args = parser.parse_args()
     
     script_dir = Path(__file__).parent
     project_root = script_dir.parent
-    config = load_config(str(script_dir / 'config.yaml'))
+    config, config_path = load_runtime_config(args.config, project_root)
     device = setup_device()
     
     experiment_type = config.get('experiment', {}).get('name', 'tri_channel')
@@ -24,12 +34,8 @@ def main():
     print(f"Checkpoint directory: {checkpoint_dir}\n")
     
     history_path = checkpoint_dir / 'training_history.pkl'
-    history = {}
-    if history_path.exists():
-        with open(history_path, 'rb') as f:
-            history = pickle.load(f)
-            
     resume_checkpoint_path = checkpoint_dir / 'latest_checkpoint.pkl'
+    history = load_pickle(history_path) if history_path.exists() and resume_checkpoint_path.exists() else {}
     start_epoch = 0
     
     train_loader, val_loader, test_loader, input_channels = build_loaders(config, project_root, experiment_type)
@@ -49,10 +55,14 @@ def main():
     # Resume Logic
     if resume_checkpoint_path.exists():
         print(f"Resuming from checkpoint: {resume_checkpoint_path}")
-        checkpoint = torch.load(resume_checkpoint_path)
+        checkpoint = torch.load(resume_checkpoint_path, map_location=device, weights_only=False)
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        start_epoch = checkpoint['epoch']
+        if checkpoint.get('scheduler_state_dict') is not None:
+            scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        if checkpoint.get('history'):
+            history = checkpoint['history']
+        start_epoch = checkpoint.get('epoch', 0)
         print(f"Resumed at epoch {start_epoch}")
         
         if start_epoch >= config['model_hp']['epochs']:
@@ -76,9 +86,9 @@ def main():
     )
     
 
-    with open(history_path, 'wb') as f:
-        pickle.dump(history, f)
+    save_pickle(history, history_path)
     print(f"Training history saved to {history_path}")
+    print(f"Config used: {config_path}")
 
 if __name__ == "__main__":
     main()

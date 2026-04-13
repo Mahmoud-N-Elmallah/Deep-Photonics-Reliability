@@ -43,6 +43,10 @@ def build_loaders(config: Dict, project_root: Path = None, experiment_type: str 
         train_ds = PhysicsDataset(config['data_path']['train'], mask_mapping_csv, train_transform, project_root)
         val_ds = PhysicsDataset(config['data_path']['val'], mask_mapping_csv, val_transform, project_root)
         test_ds = PhysicsDataset(config['data_path']['test'], mask_mapping_csv, val_transform, project_root)
+        if len(train_ds) == 0 or len(val_ds) == 0:
+            raise RuntimeError(
+                "Physics-aware datasets are empty. Run Phase 3 mask generation and Step 3.5 mapping before Phase 4."
+            )
     else:
         # Standard DatasetMaker
         train_transform = transforms.Compose([

@@ -1,17 +1,34 @@
 import torch
 import os
+import pickle
+from pathlib import Path
+
+def load_history_artifact(path):
+    artifact_path = Path(path)
+    if artifact_path.name == 'training_history.pkl':
+        with open(artifact_path, 'rb') as f:
+            return {'history': pickle.load(f)}
+    payload = torch.load(artifact_path, map_location='cpu', weights_only=False)
+    if 'history' in payload:
+        return payload
+    return {'history': payload}
 
 def monitor():
     path = r'checkpoints/tri_channel/latest_checkpoint.pkl'
+    fallback_path = r'checkpoints/tri_channel/training_history.pkl'
     if not os.path.exists(path):
-        print(f"Checkpoint not found at {path}")
-        return
+        if not os.path.exists(fallback_path):
+            print(f"Checkpoint not found at {path}")
+            return
+        path = fallback_path
 
     try:
-        cp = torch.load(path, map_location='cpu', weights_only=False)
+        cp = load_history_artifact(path)
         h = cp['history']
-        print(f"Current Epoch: {cp['epoch']}")
-        print(f"Best Val F1 so far: {cp.get('best_f1', 0.0):.4f}")
+        current_epoch = cp.get('epoch', len(h.get('train_loss', [])))
+        best_f1 = cp.get('best_f1', h.get('best_val_f1', 0.0))
+        print(f"Current Epoch: {current_epoch}")
+        print(f"Best Val F1 so far: {best_f1:.4f}")
         print()
         
         # Determine number of epochs recorded

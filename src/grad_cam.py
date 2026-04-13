@@ -1,7 +1,6 @@
+import argparse
 import os
-import sys
 from pathlib import Path
-import yaml
 import torch
 import torch.nn.functional as F
 import numpy as np
@@ -9,7 +8,7 @@ import cv2
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from utils import load_config, setup_device
+from utils import add_config_argument, load_runtime_config, setup_device
 from data_pipeline import build_loaders
 from model import PhotonicResNet18
 
@@ -112,10 +111,18 @@ def plot_and_save_visuals(raw_img, fft_img, enhanced_img, cam, mask, out_path, p
     plt.close()
 
 def main():
+    parser = argparse.ArgumentParser(description="Generate Grad-CAM maps and pseudo masks.")
+    add_config_argument(parser, default="src/config.yaml")
+    parser.add_argument(
+        "--generate_masks",
+        action="store_true",
+        help="Compatibility flag for orchestrator; mask generation is always performed.",
+    )
+    args = parser.parse_args()
+
     script_dir = Path(__file__).parent
     project_root = script_dir.parent
-    config_path = script_dir / 'config.yaml'
-    config = load_config(str(config_path))
+    config, config_path = load_runtime_config(args.config, project_root)
     device = setup_device()
 
     cam_cfg = config.get('cam_params', {})
@@ -148,11 +155,12 @@ def main():
     best_model_name = config.get('experiment', {}).get('best_model_name', 'best_model.pth')
     checkpoint_path = checkpoint_dir / best_model_name
     
-    if checkpoint_path.exists():
-        print(f"Loading checkpoint: {checkpoint_path}")
-        model.load_state_dict(torch.load(str(checkpoint_path), map_location=device))
-    else:
-        print(f"WARNING: No checkpoint found at {checkpoint_path}. Using untrained weights.")
+    if not checkpoint_path.exists():
+        raise FileNotFoundError(
+            f"Baseline checkpoint not found at {checkpoint_path}. Run Phase 1-2 before generating masks."
+        )
+    print(f"Loading checkpoint: {checkpoint_path}")
+    model.load_state_dict(torch.load(str(checkpoint_path), map_location=device))
 
     model.eval()
 
@@ -202,7 +210,7 @@ def main():
                     f"Conf: {confidence:.2f}"
                 )
 
-    print("Grad-CAM generation and Pseudo-mask creation complete. Results saved to data/pseudo_masks.")
+    print(f"Grad-CAM generation and Pseudo-mask creation complete. Config used: {config_path}")
 
 if __name__ == '__main__':
     main()

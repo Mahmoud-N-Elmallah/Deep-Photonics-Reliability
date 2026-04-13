@@ -1,8 +1,11 @@
+import argparse
 import logging
+import pickle
+from pathlib import Path
+from typing import Dict, Tuple
+
 import torch
 import yaml
-from pathlib import Path
-from typing import Dict
 
 def setup_logger():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -13,6 +16,38 @@ logger = setup_logger()
 def load_config(config_path: str) -> Dict:
     with open(config_path, 'r') as f:
         return yaml.safe_load(f)
+
+def resolve_path(path_like: str | Path, base_dir: str | Path | None = None) -> Path:
+    path = Path(path_like)
+    if path.is_absolute():
+        return path.resolve()
+    root = Path(base_dir) if base_dir is not None else Path.cwd()
+    return (root / path).resolve()
+
+def add_config_argument(parser: argparse.ArgumentParser, default: str = "src/config.yaml") -> argparse.ArgumentParser:
+    parser.add_argument(
+        "--config",
+        type=str,
+        default=default,
+        help=f"Path to configuration YAML (default: {default})",
+    )
+    return parser
+
+def load_runtime_config(config_arg: str, base_dir: str | Path | None = None) -> Tuple[Dict, Path]:
+    config_path = resolve_path(config_arg, base_dir)
+    if not config_path.exists():
+        raise FileNotFoundError(f"Config file not found: {config_path}")
+    return load_config(str(config_path)), config_path
+
+def save_pickle(obj, path: str | Path) -> None:
+    output_path = Path(path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, 'wb') as f:
+        pickle.dump(obj, f)
+
+def load_pickle(path: str | Path):
+    with open(path, 'rb') as f:
+        return pickle.load(f)
 
 def setup_device() -> torch.device:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

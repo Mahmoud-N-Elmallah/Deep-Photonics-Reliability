@@ -1,3 +1,4 @@
+import argparse
 import torch
 import torch.nn.functional as F
 import pandas as pd
@@ -7,8 +8,7 @@ import seaborn as sns
 from pathlib import Path
 from sklearn.metrics import classification_report, confusion_matrix, f1_score
 
-import pickle
-from utils import load_config, setup_device
+from utils import add_config_argument, load_pickle, load_runtime_config, setup_device
 from data_pipeline import build_loaders
 from model import PhotonicResNet18
 from grad_cam import GradCAM, denormalize
@@ -16,20 +16,19 @@ from grad_cam import GradCAM, denormalize
 def plot_training_curves(history_path, save_path):
     if not history_path.exists():
         return
-    with open(history_path, 'rb') as f:
-        history = pickle.load(f)
+    history = load_pickle(history_path)
     fig, ax1 = plt.subplots(figsize=(10, 6))
     color = 'tab:red'
     ax1.set_xlabel('Epoch')
     ax1.set_ylabel('Loss', color=color)
-    ax1.plot(history['train_loss'], color=color, label='Total Loss', linewidth=2)
-    if 'physics_loss' in history:
+    ax1.plot(history.get('train_loss', []), color=color, label='Total Loss', linewidth=2)
+    if history.get('physics_loss'):
         ax1.plot(history['physics_loss'], color='tab:orange', linestyle='--', label='Physics Loss')
     ax1.tick_params(axis='y', labelcolor=color)
     ax2 = ax1.twinx()
     color = 'tab:blue'
     ax2.set_ylabel('Val F1', color=color)
-    ax2.plot(history['val_f1'], color=color, label='Val F1 Score', linewidth=2)
+    ax2.plot(history.get('val_f1', []), color=color, label='Val F1 Score', linewidth=2)
     ax2.tick_params(axis='y', labelcolor=color)
     plt.title('Phase 4: Optimization Dynamics')
     lines, labels = ax1.get_legend_handles_labels()
@@ -39,11 +38,11 @@ def plot_training_curves(history_path, save_path):
     plt.savefig(save_path, dpi=300)
     plt.close()
 
-def run_final_evaluation():
+def run_final_evaluation(config_arg: str):
     # 1. Setup
     script_dir = Path(__file__).parent
     project_root = script_dir.parent
-    config = load_config(str(script_dir / 'config.yaml'))
+    config, config_path = load_runtime_config(config_arg, project_root)
     device = setup_device()
     
     experiment_type = config.get('experiment', {}).get('name', 'tri_channel')
@@ -86,7 +85,7 @@ def run_final_evaluation():
             all_labels.extend(labels.numpy())
 
     target_names = ['Normal', 'Minor-Defect', 'Moderate-Defect', 'Major-Defect']
-    report = classification_report(all_labels, all_preds, target_names=target_names)
+    report = classification_report(all_labels, all_preds, target_names=target_names, zero_division=0)
     cm = confusion_matrix(all_labels, all_preds)
 
     with open(results_dir / 'classification_report.txt', 'w') as f:
@@ -112,7 +111,9 @@ def run_final_evaluation():
     norm_mean = [config['stats']['train_original_mean'], config['stats']['train_fft_mean'], config['stats']['train_enhanced_mean']]
     norm_std = [config['stats']['train_original_std'], config['stats']['train_fft_std'], config['stats']['train_enhanced_std']]
     
-    indices = np.random.choice(len(test_loader.dataset), 12, replace=False)
+    sample_count = min(12, len(test_loader.dataset))
+    rng = np.random.default_rng(42)
+    indices = rng.choice(len(test_loader.dataset), sample_count, replace=False)
     
     for i, idx in enumerate(indices):
         img_tensor, label = test_loader.dataset[idx]
@@ -146,7 +147,11 @@ def run_final_evaluation():
     history_path = project_root / 'checkpoints' / 'phase4_physics' / 'training_history.pkl'
     plot_training_curves(history_path, results_dir / 'phase4_training_curves.png')
     
-    print("\nEvaluation Complete!")
+    weighted_f1 = f1_score(all_labels, all_preds, average='weighted', zero_division=0)
+    print(f"\nEvaluation Complete! Weighted F1: {weighted_f1:.4f} | Config: {config_path}")
 
 if __name__ == '__main__':
-    run_final_evaluation()
+    parser = argparse.ArgumentParser(description="Evaluate best Phase 4 model on the test set.")
+    add_config_argument(parser, default="src/config.yaml")
+    args = parser.parse_args()
+    run_final_evaluation(args.config)

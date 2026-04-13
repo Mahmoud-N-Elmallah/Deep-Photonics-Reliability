@@ -3,7 +3,7 @@ import sys
 import argparse
 from pathlib import Path
 
-def run_step(command, description):
+def run_step(command, description, cwd):
     print(f"\n{'='*60}")
     print(f"RUNNING: {description}")
     print(f"COMMAND: {' '.join(command)}")
@@ -11,7 +11,7 @@ def run_step(command, description):
     
     try:
         # Use sys.executable to ensure we use the same environment
-        result = subprocess.run([sys.executable] + command, check=True)
+        subprocess.run([sys.executable] + command, check=True, cwd=cwd)
         return True
     except subprocess.CalledProcessError as e:
         print(f"\n[ERROR] Step failed: {description}")
@@ -27,6 +27,12 @@ def main():
     
     args = parser.parse_args()
     project_root = Path(__file__).parent
+    config_path = Path(args.config)
+    if not config_path.is_absolute():
+        config_path = (project_root / config_path).resolve()
+    if not config_path.exists():
+        print(f"Error: Config not found at {config_path}")
+        sys.exit(1)
     
     # Check for dataset
     data_dir = project_root / 'data' / 'images'
@@ -36,14 +42,13 @@ def main():
         return
 
     # Define all possible steps
-    # Note: If a script supports a config flag, we pass it.
     all_steps = {
-        "0": (["src/calc_stats.py"], "Step 0: Calculating Dataset Statistics"),
-        "1-2": (["src/train.py"], "Step 1 & 2: Baseline Model Training (Phase 1-2)"),
-        "3": (["src/grad_cam.py", "--generate_masks"], "Step 3: Grad-CAM Explainability & Teacher Mask Generation"),
-        "3.5": (["src/prepare_masks_csv.py"], "Step 3.5: Preparing Mask Mapping Catalog"),
-        "4": (["src/train_phase4.py"], "Step 4: Physics-Constrained Fine-Tuning"),
-        "eval": (["src/evaluate_test_set.py"], "Final Step: Global Evaluation on Unseen Test Set")
+        "0": (["src/calc_stats.py"], "Step 0: Calculating Dataset Statistics", True),
+        "1-2": (["src/train.py"], "Step 1 & 2: Baseline Model Training (Phase 1-2)", True),
+        "3": (["src/grad_cam.py", "--generate_masks"], "Step 3: Grad-CAM Explainability & Teacher Mask Generation", True),
+        "3.5": (["src/prepare_masks_csv.py"], "Step 3.5: Preparing Mask Mapping Catalog", False),
+        "4": (["src/train_phase4.py"], "Step 4: Physics-Constrained Fine-Tuning", True),
+        "eval": (["src/evaluate_test_set.py"], "Final Step: Global Evaluation on Unseen Test Set", True)
     }
 
     # Determine pipeline based on phase
@@ -64,12 +69,13 @@ def main():
 
     print(f"\nDeep Photonics Reliability Pipeline Orchestrator")
     print(f"Mode: {'Full Run' if args.phase == 'all' else f'Phase {args.phase}'}")
-    print(f"Config: {args.config}\n")
+    print(f"Config: {config_path}\n")
 
-    for cmd, desc in pipeline:
-        # For scripts that take a config file, you might append it here if they support it
-        # Currently, the scripts load src/config.yaml by default.
-        success = run_step(cmd, desc)
+    for cmd, desc, accepts_config in pipeline:
+        command = list(cmd)
+        if accepts_config:
+            command.extend(["--config", str(config_path)])
+        success = run_step(command, desc, project_root)
         if not success:
             print("\nPipeline halted due to error.")
             sys.exit(1)

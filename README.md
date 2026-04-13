@@ -224,18 +224,11 @@ Our weighted F1 of 0.80 indicates good precision on rare defective samples (mini
 
 ## 5. Training Dynamics & Curriculum Learning
 
-## Training Curves
-
-![Training Curves](scratch/training_plot.png)
+## Training
 
 
 ### Phase 1 & 2: Baseline Tri-Channel Supervised Learning
 The model is trained on the raw tri-channel input with standard cross-entropy loss and data augmentation (rotation, elastic distortion, CLAHE variations).
-
-**Key Observations**:
-- Validation accuracy plateaus around **85–88%** by epoch 40–50.
-- Loss curves show stable convergence without catastrophic forgetting.
-- CAM analysis (Phase 3) reveals that the model has learned to discriminate based on the grid structure,a partial success, but not fully physically grounded.
 
 ### Phase 3: Pseudo-Mask Auditing
 Using Grad-CAM, we identify ~15–20% of training samples with "hallucinated" masks (broad, unfocused attention). These are flagged for potential de-weighting in Phase 4.
@@ -266,9 +259,6 @@ The power of this pipeline lies in explicitly grounding deep learning decisions 
 - Mathematically: $\mathbb{E}[f(x, y)] = \frac{1}{H \times W} \sum_{x,y} f(x,y)$
 - This implements a physical principle: **the presence of a defect matters; its absolute location does not** (a crack at position (10, 20) is the same defect as one at (100, 150)).
 
-**Feature Orthogonality & Class Separability**:
-- The near-perfect ROC-AUC approaching 1.0 on test subsets indicates that the learned feature representations of different defect classes are nearly orthogonal in the embedding space.
-- Orthogonal features are robust: small perturbations in input space do not flip class predictions, which is critical for manufacturing robustness.
 
 **Radiative vs. Non-Radiative Recombination**:
 - Normal cells: **Radiative recombination** → high EL intensity.

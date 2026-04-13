@@ -4,7 +4,7 @@
 
 **Deep Photonics Reliability** is a physics-informed machine learning pipeline that addresses a fundamental problem in photovoltaic quality assurance: **how to enforce first-principles optical physics constraints into deep learning models for reliable defect detection**, even when training data is limited and noisy.
 
-This work bridges **optical physics** (electroluminescence as a radiative recombination phenomenon) and **intelligent vision** (constraint-aware CNN learning) to achieve defect detection in solar cell EL images with **weighted F1-score of 0.82**. Unlike standard classifiers that optimize for statistical patterns (including spurious background artifacts), this pipeline implements a curriculum-learning approach across four deliberate phases, progressively enforcing spatial attention on the physical geometry of structural anomalies.
+This work bridges **optical physics** (electroluminescence as a radiative recombination phenomenon) and **intelligent vision** (constraint-aware CNN learning) to achieve defect detection in solar cell EL images with **weighted F1-score of 0.80**. Unlike standard classifiers that optimize for statistical patterns (including spurious background artifacts), this pipeline implements a curriculum-learning approach across four deliberate phases, progressively enforcing spatial attention on the physical geometry of structural anomalies.
 
 **Key Innovation**: Physics-Constrained Supervision via Spatial Loss and Confidence-Weighted Weak Supervision, enabling the model to distinguish signal (defects) from noise (grid artifacts) through enforced physical reasoning.
 
@@ -72,6 +72,15 @@ The input to **PhotonicResNet18** is not a single-channel image but a synthetic 
 ---
 
 ### Phase 3: Automated Teacher Mask Generation via Grad-CAM
+
+**Recent Improvements (Latest Update)**: 
+The Grad-CAM logic has been strengthened with improved error handling and validation:
+- **Strict validation**: Now raises `FileNotFoundError` if the Phase 1-2 checkpoint is missing, preventing silent failures
+- **Enhanced CLI integration**: Implemented proper argument parsing for better orchestration compatibility
+- **Config path tracking**: The script now reports which configuration file was used during execution for reproducibility
+- **Cleaner error messages**: More informative guidance to users (e.g., "Run Phase 1-2 before generating masks")
+
+These changes ensure more robust and debuggable mask generation, with over 413 training and 14 validation audit visualizations regenerated with the improved logic.
 
 ## Visual Evidence (Grad-CAM Examples)
 
@@ -159,21 +168,33 @@ Cracks are topological features (their shape matters), not just statistical clas
 ### Performance Results
 | Metric | Value | Context |
 |--------|-------|---------|
-| **Weighted F1-Score** | 0.82 | Harmonic mean (precision + recall), weighted by class support |
-| **Test Accuracy** | ~92% | Raw accuracy (can be misleading in imbalanced settings) |
-| **Macro F1-Score** | 0.75 | Unweighted F1 across all classes (equally values each class) |
-| **Precision (Major Defects)** | 0.95 | Critical for manufacturing: few false positives on defective cells |
-| **Recall (Minor Defects)** | 0.80 | Ensures subtle cracks are not missed |
+| **Weighted F1-Score** | 0.80 | Harmonic mean (precision + recall), weighted by class support |
+| **Test Accuracy** | 81% | Overall accuracy on blind test set (263 samples) |
+| **Macro F1-Score** | 0.64 | Unweighted F1 across all classes (equally values each class) |
+| **Precision (Major Defects)** | 0.88 | Critical for manufacturing: few false positives on defective cells |
+| **Recall (Major Defects)** | 0.78 | Effective detection of significant defects |
+| **Precision (Normal Cells)** | 0.83 | Minimal rejected good cells |
+| **Recall (Normal Cells)** | 0.90 | Robust normal cell identification |
 
 ### Why Weighted F1-Score?
 In manufacturing, **precision on "Major Defect" prediction is critical**: false positives (flagging a good cell as defective) directly impact yield loss. The weighted F1-score balances this, emphasizing performance on the defect classes that matter most.
 
+### Detailed Class-Wise Performance
+| Class | Precision | Recall | F1-Score | Support | Notes |
+|-------|-----------|--------|----------|---------|-------|
+| Normal | 0.83 | 0.90 | 0.86 | 151 | High recall ensures minimal rejection of good cells |
+| Minor-Defect | 0.72 | 0.60 | 0.65 | 30 | Challenging class; small sample size in test set |
+| Moderate-Defect | 0.20 | 0.20 | 0.20 | 10 | Very limited samples; mixed with other classes |
+| Major-Defect | 0.88 | 0.78 | 0.82 | 72 | Strong performance on critical defects |
+
+The model excels at identifying definitively good cells (Normal: F1=0.86) and major defects (F1=0.82), which are the two most important classes for manufacturing QA. Minor defects pose a classification challenge due to their subtle visual signatures and limited training data.
+
 ### Comparison to Literature Baselines
 Recent literature on ELPV reports F1-scores ranging from **0.80 to 0.97** using various techniques:
 - SOTA results using Advanced methods (GANs, semi-supervised learning): ~0.91–0.97
-- Our approach: **0.82**
+- Our approach: **0.80**
 
-- results are competitive but not state-of-the-art on ELPV alone. The value of this project lies not in the absolute metric, but in the methodology where we prioritize interpretability, explainablitiy and physics grounding over pure benchmark optimization. The approach and spatial constraint mechanism are transferable to other optical imaging domains (defect detection, medical imaging, etc.) where interpretability matters more than marginal accuracy gains.
+Our results are competitive within the literature range. The value of this project lies not in the absolute metric, but in the methodology where we prioritize interpretability, explainability and physics grounding over pure benchmark optimization. The approach and spatial constraint mechanism are transferable to other optical imaging domains (defect detection, medical imaging, etc.) where interpretability matters more than marginal accuracy gains.
 
 ---
 
@@ -186,7 +207,7 @@ The ELPV dataset exhibits **class imbalance**: ~70% of samples are "Normal" cell
 - **Weighted F1**: Averages F1 scores across classes, weighted by the number of samples in each class. Reflects real-world performance where defects are rare but critical.
 - **Macro F1**: Treats each class equally. Reveals whether the model generalizes uniformly across severity levels.
 
-Our weighted F1 of 0.82 indicates good precision on rare defective samples (minimizing false alarms) while maintaining reasonable recall.
+Our weighted F1 of 0.80 indicates good precision on rare defective samples (minimizing false alarms) while maintaining reasonable recall.
 
 ---
 
@@ -211,7 +232,7 @@ Using Grad-CAM, we identify ~15–20% of training samples with "hallucinated" ma
 ### Phase 4: Physics Regularization
 When the Dice-BCE spatial loss is introduced:
 - **Epochs 0–5 (Warmup)**: $\lambda_{\text{physics}}$ gradually increases from 0.0 to 0.25. Loss increases initially as the model struggles to satisfy the new spatial constraint.
-- **Epochs 6–30 (Adaptation)**: The model fine-tunes to align internal attention with physically meaningful defect regions. Weighted F1 improves to **0.82** (up from ~0.74–0.76 in Phase 2).
+- **Epochs 6–30 (Adaptation)**: The model fine-tunes to align internal attention with physically meaningful defect regions. Weighted F1 improves on validation data during this phase (up from ~0.74–0.76 in Phase 2).
 - **Epochs 31+**: Convergence stabilizes. Validation metrics plateau, indicating the model has learned robust spatial patterns.
 
 **Trade-off**: The spatial constraint slightly sacrifices raw classification accuracy (88–92%) in favor of interpretable, physics-aligned features. For manufacturing applications, this trade-off is favorable: operators need to understand *where* and *why* a defect was flagged.
@@ -263,7 +284,7 @@ The power of this pipeline lies in explicitly grounding deep learning decisions 
 
 ### Current Limitations
 1. **Single-Dataset Evaluation**: Model is evaluated only on ELPV. Cross-dataset generalization (to PVEL-AD, SunPower, other EL benchmarks) is untested.
-2. **Modest Absolute Performance**: Weighted F1 of 0.82 is competitive but not state-of-the-art. Trade-off between interpretability and accuracy is intentional.
+2. **Modest Absolute Performance**: Weighted F1 of 0.80 on the blind test set is competitive but not state-of-the-art. Trade-off between interpretability and accuracy is intentional.
 3. **Weak Supervision Noise**: Pseudo-masks from Grad-CAM can be unreliable for marginal samples; Confidence Gate mitigates but doesn't eliminate this.
 4. **Limited Defect Diversity**: ELPV focuses on broad defect categories; fine-grained defect type classification (crack vs. contact failure vs. PID) is not addressed.
 
@@ -359,6 +380,26 @@ python main.py --phase eval  # Only run final evaluation on test set
 
 ---
 
+## Recent Code Improvements & Updates
+
+### Latest Changes (Commit: "strentghened the grad cam logic")
+
+**Grad-CAM Module Enhancements** (`src/grad_cam.py`):
+1. **Robust Error Handling**: Switched from silent warnings to explicit `FileNotFoundError` with actionable guidance when prerequisites (Phase 1-2 checkpoint) are missing
+2. **CLI Infrastructure**: Implemented proper argument parsing using `argparse`, improving integration with the orchestrator pipeline and enabling flexible configuration override
+3. **Config Management Refactor**: Replaced manual YAML loading with centralized `load_runtime_config()` utility for better maintainability
+4. **Reproducibility**: Final execution reports which configuration file was used, aiding in debugging and result verification
+5. **Clean Imports**: Removed unused dependencies (`sys`, `yaml`) for leaner memory footprint
+
+**Impact**:
+- Over 400+ pseudo-mask visualizations regenerated with strengthened logic
+- Phase comparison visuals (10+ images) updated to reflect refined Grad-CAM outputs  
+- More reliable mask auditing workflow with explicit failure modes
+
+**Development Note**: These improvements prioritize **robustness and debuggability** without changing the core Grad-CAM algorithm, ensuring backward compatibility while preventing silent failures in the pipeline.
+
+---
+
 ## 10. Key Takeaways
 
 1. **Physics-Constrained Supervision Works**: By grounding deep learning in optical physics, we can improve model interpretability without significant accuracy sacrifice.
@@ -369,7 +410,7 @@ python main.py --phase eval  # Only run final evaluation on test set
 
 4. **Weak Supervision with Confidence Gating Scales**: Pseudo-labels from Grad-CAM are valuable when filtered by model confidence, reducing annotation cost while maintaining quality.
 
-5. **The Trade-off is Intentional**: Weighted F1 of 0.82 represents a deliberate choice prioritizing interpretability and domain generalization over marginal accuracy gains on a single benchmark.
+5. **The Trade-off is Intentional**: Weighted F1 of 0.80 represents a deliberate choice prioritizing interpretability and domain generalization over marginal accuracy gains on a single benchmark.
 
 ---
 
@@ -387,7 +428,7 @@ It is important to state clearly that the final F1-score reported in this projec
 
 However, the main purpose of this work is **not** to chase the highest benchmark number. The real contribution of this project is the **methodology**: a physics-aware, curriculum-based pipeline that combines frequency-domain preprocessing, multi-domain feature fusion, Grad-CAM-based weak supervision, and spatially constrained optimization.
 
-Even without claiming state-of-the-art performance, the project still demonstrates that this methodology is effective. It improves interpretability, encourages physically meaningful attention, and shows that domain knowledge can be injected into computer vision systems in a practical and measurable way. In that sense, the value of the project lies less in being the best score out there and more in proving that a physics constrained learning can work reliably nonetheless.
+Even without claiming state-of-the-art performance, the project still demonstrates that this methodology is effective. It improves interpretability, encourages physically meaningful attention, and shows that domain knowledge can be injected into computer vision systems in a practical and measurable way. The weighted F1-score of 0.80, combined with strong major-defect precision (0.88), validates the approach's reliability for manufacturing quality assurance applications. In that sense, the value of the project lies less in being the best score out there and more in proving that physics-constrained learning can work reliably nonetheless.
 
 ---
 

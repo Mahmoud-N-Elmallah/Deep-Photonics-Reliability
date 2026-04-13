@@ -425,10 +425,8 @@ python main.py --phase eval  # Only run final evaluation on test set
 
 ## Final Note on Performance
 
-It is important to state clearly that the final F1-score reported in this project is **not the best performance available in the literature** on ELPV. That is acknowledged openly.
-
+- It is important to state clearly that the final F1-score reported in this project is **not the best performance available in the literature** on ELPV. That is acknowledged openly.
 However, the main purpose of this work is **not** to chase the highest benchmark number. The real contribution of this project is the **methodology**: a physics-aware, curriculum-based pipeline that combines frequency-domain preprocessing, multi-domain feature fusion, Grad-CAM-based weak supervision, and spatially constrained optimization.
-
 Even without claiming state-of-the-art performance, the project still demonstrates that this methodology is effective. It improves interpretability, encourages physically meaningful attention, and shows that domain knowledge can be injected into computer vision systems in a practical and measurable way. The weighted F1-score of 0.80, combined with strong major-defect precision (0.88), validates the approach's reliability for manufacturing quality assurance applications. In that sense, the value of the project lies less in being the best score out there and more in proving that physics-constrained learning can work reliably nonetheless.
 its worth noting that the results are compounding since a good backpone model will generate better grad cam masks which will in turn lead to better physics-constrained tuning so for further improvement, we can search for better backbone architectures (e.g. ResNet34, ResNet50, EfficientNet) or more advanced attention mechanisms (e.g. CBAM, SE blocks) in Phase 2 to further boost the quality of the pseudo-masks and thus the final performance, and also we can iterate by predicting new masks using the Phase 4 model and retraining with those improved masks, creating a cycle of improvement but this has not been done in this project due to time constraints and computational limitations.
 ---

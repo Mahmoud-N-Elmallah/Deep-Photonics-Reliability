@@ -114,14 +114,13 @@ These changes ensure more robust and debuggable mask generation, with over 413 t
 
 ![Phase Comparison 0010](data/phase_comparison/cell0010_comparison.jpg)
 ![Phase Comparison 0517](data/phase_comparison/cell0517_comparison.jpg)
-![CAM 0793](data/phase_comparison/cell0793_comparison.jpg)
-![CAM 0695](data/phase_comparison/cell0695_comparison.jpg)
-![CAM 0112](data/phase_comparison/cell0517_comparison.jpg)
-![CAM 0662](data/phase_comparison/cell0662_comparison.jpg)
-![CAM 0459](data/phase_comparison/cell0171_comparison.jpg)
-![CAM 0411](data/phase_comparison/cell0242_comparison.jpg)
-![CAM 0010](data/phase_comparison/cell0375_comparison.jpg)
-![CAM 0488](data/phase_comparison/cell0488_comparison.jpg)
+![Phase Comparison 0793](data/phase_comparison/cell0793_comparison.jpg)
+![Phase Comparison 0695](data/phase_comparison/cell0695_comparison.jpg)
+![Phase Comparison 0112](data/phase_comparison/cell0517_comparison.jpg)
+![Phase Comparison 0662](data/phase_comparison/cell0662_comparison.jpg)
+![Phase Comparison 0459](data/phase_comparison/cell0459_comparison.jpg)
+![Phase Comparison 0411](data/phase_comparison/cell0411_comparison.jpg)
+![Phase Comparison 0488](data/phase_comparison/cell0488_comparison.jpg)
 
 ### Phase 4: Physics-Constrained Optimization via Spatial Loss
 **Objective**: Force the model's internal attention to align with the *path* of structural defects.
@@ -165,13 +164,13 @@ Cracks are topological features (their shape matters), not just statistical clas
 
 ## Test Set Gallery
 
-| Case 0 | Case 1 | Case 2 | Case 3 |
-| :---: | :---: | :---: | :---: |
-| ![T0](results/final_evaluation/blind_test_0.jpg) | ![T1](results/final_evaluation/blind_test_1.jpg) | ![T2](results/final_evaluation/blind_test_2.jpg) | ![T3](results/final_evaluation/blind_test_3.jpg) |
-| Case 4 | Case 5 | Case 6 | Case 7 |
-| ![T4](results/final_evaluation/blind_test_4.jpg) | ![T5](results/final_evaluation/blind_test_5.jpg) | ![T6](results/final_evaluation/blind_test_6.jpg) | ![T7](results/final_evaluation/blind_test_7.jpg) |
-| Case 8 | Case 9 | Case 10 | Case 11 |
-| ![T8](results/final_evaluation/blind_test_8.jpg) | ![T9](results/final_evaluation/blind_test_9.jpg) | ![T10](results/final_evaluation/blind_test_10.jpg) | ![T11](results/final_evaluation/blind_test_11.jpg) |
+| Case 0 | Case 1 | Case 2 |
+| :---: | :---: | :---: |
+| ![T0](results/final_evaluation/blind_test_0.jpg) | ![T1](results/final_evaluation/blind_test_1.jpg) | ![T2](results/final_evaluation/blind_test_2.jpg)|
+| Case 3 | Case 4 | Case 5 |
+| ![T3](results/final_evaluation/blind_test_4.jpg) | ![T4](results/final_evaluation/blind_test_5.jpg) | ![T5](results/final_evaluation/blind_test_6.jpg) |
+| Case 6| Case 7 | Case 8 |
+|![T6](results/final_evaluation/blind_test_7.jpg) | ![T7](results/final_evaluation/blind_test_9.jpg) | ![T10](results/final_evaluation/blind_test_10.jpg) |
 
 ### Performance Results
 | Metric | Value | Context |
@@ -344,7 +343,7 @@ The power of this pipeline lies in explicitly grounding deep learning decisions 
 ```bash
 Run the COMPLETE pipeline from start to finish
 # (Includes data stats, Phase 1-2, Phase 3 masks, Phase 4 tuning, and Evaluation)
-python main.py
+python main.py --phase all --config src/config.yaml
 # Optional: Run specific phases through the orchestrator
 python main.py --phase 1-2   # Only train the baseline model
 python main.py --phase 3     # Only generate explainability masks

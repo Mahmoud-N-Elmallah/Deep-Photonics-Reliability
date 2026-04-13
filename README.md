@@ -84,17 +84,20 @@ These changes ensure more robust and debuggable mask generation, with over 413 t
 
 ## Visual Evidence (Grad-CAM Examples)
 
-![CAM 0793](data/pseudo_masks/visuals/train/cell0793_cam.jpg)
-![CAM 0695](data/pseudo_masks/visuals/train/cell0695_cam.jpg)
-![CAM 0112](data/pseudo_masks/visuals/train/cell0517_cam.jpg)
-![CAM 0662](data/pseudo_masks/visuals/train/cell0662_cam.jpg)
-![CAM 0459](data/pseudo_masks/visuals/train/cell0171_cam.jpg)
-![CAM 0411](data/pseudo_masks/visuals/train/cell0242_cam.jpg)
-![CAM 0010](data/pseudo_masks/visuals/train/cell0375_cam.jpg)
-![CAM 0488](data/pseudo_masks/visuals/train/cell0488_cam.jpg)
+![CAM 0026](data/pseudo_masks/visuals/train/cell0026_cam.jpg")
+![CAM 0115](data/pseudo_masks/visuals/train/cell0115_cam.jpg)
+![CAM 0160](data/pseudo_masks/visuals/train/cell0160_cam.jpg)
+![CAM 0206](data/pseudo_masks/visuals/train/cell0206_cam.jpg)
+![CAM 0220](data/pseudo_masks/visuals/train/cell0220_cam.jpg)
+![CAM 0242](data/pseudo_masks/visuals/train/cell0242_cam.jpg)
+![CAM 0249](data/pseudo_masks/visuals/train/cell0249_cam.jpg)
+![CAM 0428](data/pseudo_masks/visuals/train/cell0428_cam.jpg)
 
-### Bad Mask Example
-![Bad Mask Sample](data/pseudo_masks/visuals/train/cell0508_cam.jpg)
+### Bad Mask Examples
+![Bad Mask Sample 0604](data/pseudo_masks/visuals/train/cell0604_cam.jpg)
+![Bad Mask Sample 1158](data/pseudo_masks/visuals/train/cell1158_cam.jpg)
+![Bad Mask Sample 1261](data/pseudo_masks/visuals/train/cell1261_cam.jpg)
+![Bad Mask Sample 1501](data/pseudo_masks/visuals/train/cell1501_cam.jpg)
 
 **Objective**: Extract spatial attention patterns *without manual annotations* and use them to audit model behavior.
 
@@ -176,6 +179,7 @@ Cracks are topological features (their shape matters), not just statistical clas
 | Metric | Value | Context |
 |--------|-------|---------|
 | **Weighted F1-Score** | 0.80 | Harmonic mean (precision + recall), weighted by class support |
+| **Weighted F1-Score** (without grad cam masks i.e just the res net step)| 0.75 | Baseline performance without physics-constrained supervision (Phase 2 model) |
 | **Test Accuracy** | 81% | Overall accuracy on blind test set (263 samples) |
 | **Macro F1-Score** | 0.64 | Unweighted F1 across all classes (equally values each class) |
 | **Precision (Major Defects)** | 0.88 | Critical for manufacturing: few false positives on defective cells |
@@ -198,7 +202,7 @@ The model excels at identifying definitively good cells (Normal: F1=0.86) and ma
 
 ### Comparison to Literature Baselines
 Recent literature on ELPV reports F1-scores ranging from **0.78 to 0.97** using various techniques:
-- SOTA results using Advanced methods (GANs, semi-supervised learning): ~0.91–0.97
+- SOTA results using Advanced methods (GANs, semi-supervised learning): Up to 0.97
 - Our approach: **0.80**
 
 While these results are not the best among the SOTA results, The value of this project lies not in the absolute metric, but in the methodology where interpretability, explainability and physics grounding are prioritized over pure benchmark optimization. The approach and spatial constraint mechanism are transferable to other optical imaging domains (defect detection, medical imaging, etc.) where interpretability matters more than marginal accuracy gains.
@@ -396,12 +400,12 @@ python main.py --phase eval  # Only run final evaluation on test set
 2. **CLI Infrastructure**: Implemented proper argument parsing using `argparse`, improving integration with the orchestrator pipeline and enabling flexible configuration override
 3. **Config Management Refactor**: Replaced manual YAML loading with centralized `load_runtime_config()` utility for better maintainability
 4. **Reproducibility**: Final execution reports which configuration file was used, aiding in debugging and result verification
-5. **Clean Imports**: Removed unused dependencies (`sys`, `yaml`) for leaner memory footprint
+5. **Imports**: Removed unused dependencies (`sys`, `yaml`)
 
 **Impact**:
 - Over 400+ pseudo-mask visualizations regenerated with strengthened logic
-- Phase comparison visuals (10+ images) updated to reflect refined Grad-CAM outputs  
-- More reliable mask auditing workflow with explicit failure modes
+- Phase comparison visuals updated to reflect refined Grad-CAM outputs  
+- More reliable mask auditing workflow with explicit failure modes and higher confidence required for mask generation.
 
 **Development Note**: These improvements prioritize **robustness and debuggability** without changing the core Grad-CAM algorithm, ensuring backward compatibility while preventing silent failures in the pipeline.
 
@@ -417,7 +421,7 @@ python main.py --phase eval  # Only run final evaluation on test set
 
 4. **Weak Supervision with Confidence Gating Scales**: Pseudo-labels from Grad-CAM are valuable when filtered by model confidence, reducing annotation cost while maintaining quality.
 
-5. **The Trade-off is Intentional**: Weighted F1 of 0.80 represents a deliberate choice prioritizing interpretability and domain generalization over marginal accuracy gains on a single benchmark.
+5. **The Trade-off is Intentional**: Weighted F1 of 0.80 represents a deliberate choice prioritizing interpretability over marginal accuracy gains on a single benchmark.
 
 ---
 
@@ -436,7 +440,7 @@ It is important to state clearly that the final F1-score reported in this projec
 However, the main purpose of this work is **not** to chase the highest benchmark number. The real contribution of this project is the **methodology**: a physics-aware, curriculum-based pipeline that combines frequency-domain preprocessing, multi-domain feature fusion, Grad-CAM-based weak supervision, and spatially constrained optimization.
 
 Even without claiming state-of-the-art performance, the project still demonstrates that this methodology is effective. It improves interpretability, encourages physically meaningful attention, and shows that domain knowledge can be injected into computer vision systems in a practical and measurable way. The weighted F1-score of 0.80, combined with strong major-defect precision (0.88), validates the approach's reliability for manufacturing quality assurance applications. In that sense, the value of the project lies less in being the best score out there and more in proving that physics-constrained learning can work reliably nonetheless.
-
+its worth noting that the results are compounding since a good backpone model will generate better grad cam masks which will in turn lead to better physics-constrained tuning so for further improvement, we can search for better backbone architectures (e.g. ResNet34, ResNet50, EfficientNet) or more advanced attention mechanisms (e.g. CBAM, SE blocks) in Phase 2 to further boost the quality of the pseudo-masks and thus the final performance, and also we can iterate by predicting new masks using the Phase 4 model and retraining with those improved masks, creating a cycle of improvement but this has not been done in this project due to time constraints and computational limitations.
 ---
 
 Mahmoud Nabil El-Mallah  

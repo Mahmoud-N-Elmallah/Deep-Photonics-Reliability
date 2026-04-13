@@ -61,11 +61,11 @@ def compare_models(config_arg: str):
     
     
     sample_count = 0
-    max_samples = 10
+    max_samples = 40
     
     for idx in range(len(val_loader.dataset)):
         img_tensor, label = val_loader.dataset[idx]
-        if label == 0: continue # Skip normal cells
+        # Skip normal cells
         
         img_path = val_loader.dataset.data['path'][idx]
         base_name = Path(img_path).stem

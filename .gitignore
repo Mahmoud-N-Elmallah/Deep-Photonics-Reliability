@@ -20,6 +20,7 @@ README.md
 !results/final_evaluation/*.jpg
 !results/sample_images/*.png
 !data/phase_comparison/*.jpg
+!data/pseudo_masks/visuals/train/*.jpg
 
 # Un-ignoring specific pseudo-mask visuals
 !data/pseudo_masks/visuals/

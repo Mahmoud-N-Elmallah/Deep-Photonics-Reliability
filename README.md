@@ -84,14 +84,14 @@ These changes ensure more robust and debuggable mask generation, with over 413 t
 
 ## Visual Evidence (Grad-CAM Examples)
 
-![CAM 0013](data/pseudo_masks/visuals/train/cell0013_cam.jpg)
-![CAM 0031](data/pseudo_masks/visuals/train/cell0031_cam.jpg)
-![CAM 0112](data/pseudo_masks/visuals/train/cell0112_cam.jpg)
-![CAM 0115](data/pseudo_masks/visuals/train/cell0115_cam.jpg)
-![CAM 0171](data/pseudo_masks/visuals/train/cell0171_cam.jpg)
-![CAM 0242](data/pseudo_masks/visuals/train/cell0242_cam.jpg)
-![CAM 0375](data/pseudo_masks/visuals/train/cell0375_cam.jpg)
-![CAM 0438](data/pseudo_masks/visuals/train/cell0438_cam.jpg)
+![CAM 0793](data/pseudo_masks/visuals/train/cell0793_cam.jpg)
+![CAM 0695](data/pseudo_masks/visuals/train/cell0695_cam.jpg)
+![CAM 0112](data/pseudo_masks/visuals/train/cell0517_cam.jpg)
+![CAM 0662](data/pseudo_masks/visuals/train/cell0662_cam.jpg)
+![CAM 0459](data/pseudo_masks/visuals/train/cell0171_cam.jpg)
+![CAM 0411](data/pseudo_masks/visuals/train/cell0242_cam.jpg)
+![CAM 0010](data/pseudo_masks/visuals/train/cell0375_cam.jpg)
+![CAM 0488](data/pseudo_masks/visuals/train/cell0488_cam.jpg)
 
 ### Bad Mask Example
 ![Bad Mask Sample](data/pseudo_masks/visuals/train/cell0508_cam.jpg)
@@ -114,6 +114,14 @@ These changes ensure more robust and debuggable mask generation, with over 413 t
 
 ![Phase Comparison 0010](data/phase_comparison/cell0010_comparison.jpg)
 ![Phase Comparison 0517](data/phase_comparison/cell0517_comparison.jpg)
+![CAM 0793](data/phase_comparison/cell0793_comparison.jpg)
+![CAM 0695](data/phase_comparison/cell0695_comparison.jpg)
+![CAM 0112](data/phase_comparison/cell0517_comparison.jpg)
+![CAM 0662](data/phase_comparison/cell0662_comparison.jpg)
+![CAM 0459](data/phase_comparison/cell0171_comparison.jpg)
+![CAM 0411](data/phase_comparison/cell0242_comparison.jpg)
+![CAM 0010](data/phase_comparison/cell0375_comparison.jpg)
+![CAM 0488](data/phase_comparison/cell0488_comparison.jpg)
 
 ### Phase 4: Physics-Constrained Optimization via Spatial Loss
 **Objective**: Force the model's internal attention to align with the *path* of structural defects.
@@ -190,11 +198,11 @@ In manufacturing, **precision on "Major Defect" prediction is critical**: false 
 The model excels at identifying definitively good cells (Normal: F1=0.86) and major defects (F1=0.82), which are the two most important classes for manufacturing QA. Minor defects pose a classification challenge due to their subtle visual signatures and limited training data.
 
 ### Comparison to Literature Baselines
-Recent literature on ELPV reports F1-scores ranging from **0.80 to 0.97** using various techniques:
+Recent literature on ELPV reports F1-scores ranging from **0.78 to 0.97** using various techniques:
 - SOTA results using Advanced methods (GANs, semi-supervised learning): ~0.91–0.97
 - Our approach: **0.80**
 
-Our results are competitive within the literature range. The value of this project lies not in the absolute metric, but in the methodology where we prioritize interpretability, explainability and physics grounding over pure benchmark optimization. The approach and spatial constraint mechanism are transferable to other optical imaging domains (defect detection, medical imaging, etc.) where interpretability matters more than marginal accuracy gains.
+While these results are not the best among the SOTA results, The value of this project lies not in the absolute metric, but in the methodology where interpretability, explainability and physics grounding are prioritized over pure benchmark optimization. The approach and spatial constraint mechanism are transferable to other optical imaging domains (defect detection, medical imaging, etc.) where interpretability matters more than marginal accuracy gains.
 
 ---
 

@@ -84,7 +84,7 @@ These changes ensure more robust and debuggable mask generation, with over 413 t
 
 ## Visual Evidence (Grad-CAM Examples)
 
-![CAM 0026](data/pseudo_masks/visuals/train/cell0026_cam.jpg")
+![CAM 0026](data/pseudo_masks/visuals/train/cell0026_cam.jpg)
 ![CAM 0115](data/pseudo_masks/visuals/train/cell0115_cam.jpg)
 ![CAM 0160](data/pseudo_masks/visuals/train/cell0160_cam.jpg)
 ![CAM 0206](data/pseudo_masks/visuals/train/cell0206_cam.jpg)

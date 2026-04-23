@@ -1,5 +1,62 @@
 # Deep Photonics Reliability: Physics-Constrained Defect Detection in Electroluminescence Imagery
 
+## Project Pipeline Graph
+
+```mermaid
+%%{init: {"theme": "base", "themeVariables": {"background": "#0b0f0e", "primaryColor": "#111417", "primaryTextColor": "#f2f0ec", "primaryBorderColor": "#d9ddd8", "lineColor": "#d9ddd8", "secondaryColor": "#5b333d", "tertiaryColor": "#77784d", "clusterBkg": "#5b333d", "clusterBorder": "#8c5a66", "fontFamily": "Inter, Segoe UI, Arial"}}}%%
+flowchart LR
+    A["Raw ELPV Data<br/>data/images: 2,624 PNGs<br/>labels.csv"] --> B["Data Split Prep<br/>data_preparation.ipynb<br/>fixed_labels.csv<br/>train / val / test CSVs"]
+    B --> C["Runtime Config<br/>src/config.yaml<br/>FFT params, augmentations<br/>class weights, stats"]
+    C --> D["main.py Orchestrator<br/>--phase all / 1-2 / 3 / 4 / eval"]
+
+    D --> S0["Step 0<br/>calc_stats.py<br/>tri-channel normalization stats"]
+    S0 --> F0
+
+    subgraph F["Phase 1: Physics Feature Engineering"]
+        F0["physics_utils.py<br/>FFT spectrum<br/>Gaussian notch filter<br/>IFFT reconstruction"] --> F1["dataset.py<br/>FftTransform<br/>raw + FFT-cleaned + CLAHE"]
+        F1 --> F2["data_pipeline.py<br/>DataLoaders<br/>augmentation + normalization"]
+    end
+
+    subgraph T["Phases 1-2: Tri-Channel Supervised Training"]
+        F2 --> T0["train.py<br/>baseline training entry<br/>resume latest checkpoint"]
+        T0 --> T1["model.py<br/>PhotonicResNet18<br/>ResNet18 conv1 adapted<br/>quadratic attention map"]
+        T1 --> T2["training_engine.py<br/>weighted CE loss<br/>AdamW + scheduler<br/>mixed precision + weighted F1"]
+        T2 --> T3["checkpoints/tri_channel<br/>best_model.pth<br/>latest_checkpoint.pkl<br/>training_history.pkl"]
+    end
+
+    subgraph G["Phase 3: Grad-CAM Teacher Mask Generation"]
+        T3 --> G0["grad_cam.py<br/>layer4 Grad-CAM<br/>percentile threshold<br/>morphological cleanup"]
+        G0 --> G1["data/pseudo_masks<br/>train / val masks<br/>audit visualization boards"]
+        G1 --> G2["prepare_masks_csv.py<br/>pseudo_masks_mapping.csv"]
+    end
+
+    subgraph P["Phase 4: Physics-Constrained Fine-Tuning"]
+        G2 --> P0["PhysicsDataset<br/>image-mask merge<br/>joint transforms<br/>mask coverage gate"]
+        T3 --> P1["train_phase4.py<br/>load baseline weights<br/>build physics loaders"]
+        P0 --> P2["training_engine.py<br/>CE + lambda Dice attention loss<br/>confidence-weighted mask gate<br/>5-epoch physics ramp"]
+        P1 --> P2
+        P2 --> P3["checkpoints/phase4_physics<br/>best_model.pth<br/>training_history.pkl"]
+    end
+
+    subgraph R["Evaluation, Reports, and Audit Artifacts"]
+        P3 --> R0["evaluate_test_set.py<br/>blind test inference<br/>classification report<br/>confusion matrix<br/>blind-test CAM overlays"]
+        T3 --> R1["compare_phases_visuals.py<br/>Phase 3 vs Phase 4<br/>attention comparison boards"]
+        P3 --> R1
+        R0 --> R2["results/final_evaluation<br/>classification_report.txt<br/>confusion_matrix.png<br/>phase4 curves + overlays"]
+        R1 --> R3["data/phase_comparison<br/>40 comparison JPGs"]
+    end
+
+    T3 --> H["scratch helpers<br/>monitor_training.py<br/>plot_results.py<br/>detailed_analysis.py"]
+    P3 --> H
+
+    classDef input fill:#111417,stroke:#d9ddd8,color:#f2f0ec;
+    classDef process fill:#111417,stroke:#d9ddd8,color:#f2f0ec;
+    classDef phase fill:#77784d,stroke:#d9ddd8,color:#f2f0ec;
+    classDef artifact fill:#111417,stroke:#d9ddd8,color:#f2f0ec;
+    class A,B,C,D,S0,F0,F1,F2,T0,T1,T2,G0,G2,P0,P1,P2,R0,R1,H process;
+    class T3,G1,P3,R2,R3 artifact;
+```
+
 ## Overview
 
 **Deep Photonics Reliability** is a physics-informed machine learning pipeline that addresses a fundamental problem in photovoltaic quality assurance: **how to enforce first-principles optical physics constraints into deep learning models for reliable defect detection**, even when training data is limited and noisy.
